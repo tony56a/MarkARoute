@@ -182,5 +182,7 @@ namespace MarkARoute.UI
 
             return UIView.GetAView().defaultAtlas;
         }
+
+
     }
 }

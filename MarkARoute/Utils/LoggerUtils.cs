@@ -10,17 +10,17 @@ namespace MarkARoute.Utils
     {
         private static readonly string TAG = "Mark-a-Route: ";
 
-        public static void Log(string message)
+        public static void Log(System.Object message)
         {
             Debug.Log(TAG + message);
         }
 
-        public static void LogWarning(string message)
+        public static void LogWarning(System.Object message)
         {
             Debug.LogWarning(TAG + message);
         }
 
-        public static void LogError(string message)
+        public static void LogError(System.Object message)
         {
             Debug.LogError(TAG + message);
         }

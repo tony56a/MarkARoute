@@ -53,15 +53,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Managers\DynamicMonitorManager.cs" />
+    <Compile Include="ThreadingMonitor.cs" />
     <Compile Include="Managers\EventBusManager.cs" />
     <Compile Include="Managers\RenderingManager.cs" />
     <Compile Include="Managers\RouteManager.cs" />
     <Compile Include="MarkARouteLoading.cs" />
     <Compile Include="MarkARouteMod.cs" />
+    <Compile Include="MarkARouteOptions.cs" />
     <Compile Include="MarkARouteSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tools\DynamicSignPlacementTool.cs" />
     <Compile Include="Tools\RoadSelectorTool.cs" />
+    <Compile Include="Tools\SignPlacementTool.cs" />
+    <Compile Include="Tools\StaticSignPlacementTool.cs" />
+    <Compile Include="UI\AddSignPanel.cs" />
+    <Compile Include="UI\DeleteSignPanel.cs" />
+    <Compile Include="UI\DeleteSignRowItem.cs" />
     <Compile Include="UI\MainPanel.cs" />
+    <Compile Include="UI\ModPanel.cs" />
     <Compile Include="UI\RouteNamePanel.cs" />
     <Compile Include="UI\TitleBar.cs" />
     <Compile Include="UI\UIFastList.cs" />
@@ -72,6 +82,7 @@
     <Compile Include="Utils\LoggerUtils.cs" />
     <Compile Include="Utils\MeshUtils.cs" />
     <Compile Include="Utils\RouteShieldConfig.cs" />
+    <Compile Include="Utils\ShaderUtils.cs" />
     <Compile Include="Utils\SpriteUtils.cs" />
   </ItemGroup>
   <ItemGroup>

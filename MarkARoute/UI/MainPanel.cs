@@ -11,13 +11,10 @@ namespace MarkARoute.UI
 {
     public class MainPanel : UICustomControl
     {
-        RoadSelectorTool mRoadSelectTool;
         UIButton markRouteBtn;
+        ModPanel modPanel;
 
-        private GameObject m_namingPanelObject;
-        private GameObject m_usedRoutesPanelObject;
-        private RouteNamePanel m_namingPanel;
-        private UsedRoutesPanel m_usedRoutesPanel;
+        private bool m_isUiShowing;
 
         public MainPanel()
         {
@@ -38,55 +35,50 @@ namespace MarkARoute.UI
             markRouteBtn.focusedTextColor = new Color32(255, 255, 255, 255);
             markRouteBtn.pressedTextColor = new Color32(30, 30, 44, 255);
             markRouteBtn.eventClick += markRouteBtn_eventClick;
-            markRouteBtn.relativePosition = new Vector3(150f, 60f);
+            markRouteBtn.relativePosition = new Vector3(180f, 60f);
 
-            m_namingPanelObject = new GameObject("RouteNamePanel");
-            m_namingPanel = m_namingPanelObject.AddComponent<RouteNamePanel>();
-            m_namingPanel.transform.parent = uiView.transform;
-            m_namingPanel.Hide();
-
-            m_usedRoutesPanelObject = new GameObject("UsedRoutesPanel");
-            m_usedRoutesPanel = m_usedRoutesPanelObject.AddComponent<UsedRoutesPanel>();
-            m_usedRoutesPanel.transform.parent = uiView.transform;
-            m_usedRoutesPanel.Hide();
-
-            EventBusManager.Instance().Subscribe("forceupdateroadnames", m_usedRoutesPanel);
-            EventBusManager.Instance().Subscribe("closeUsedNamePanel", m_usedRoutesPanel);
-            EventBusManager.Instance().Subscribe("closeAll", m_usedRoutesPanel);
-            EventBusManager.Instance().Subscribe("closeAll", m_namingPanel);
-            EventBusManager.Instance().Subscribe("updateroutepaneltext", m_namingPanel);
+            ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
+            ToolsModifierControl.SetTool<DefaultTool>();
         }
 
         private void markRouteBtn_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
+            ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
+            ToolsModifierControl.SetTool<DefaultTool>();
 
-            if (mRoadSelectTool == null)
+            if (m_isUiShowing)
             {
-                if (!ToolsModifierControl.toolController.gameObject.GetComponent<RoadSelectorTool>())
-                {
-                    ToolsModifierControl.toolController.gameObject.AddComponent<RoadSelectorTool>();
-                }
-                mRoadSelectTool = ToolsModifierControl.toolController.gameObject.GetComponent<RoadSelectorTool>();
-                mRoadSelectTool.m_namingPanel = m_namingPanel;
-                mRoadSelectTool.m_usedRoutesPanel = m_usedRoutesPanel;
-                ToolsModifierControl.toolController.CurrentTool = mRoadSelectTool;
-                ToolsModifierControl.SetTool<RoadSelectorTool>();
+                hideUI();
             }
             else
             {
-                ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
-                ToolsModifierControl.SetTool<DefaultTool>();
-                UnityEngine.Object.Destroy(mRoadSelectTool);
-                mRoadSelectTool = null;
+                showUI();
             }
         }
 
-        private void EnableTool()
+        private void showUI()
         {
-            if (mRoadSelectTool == null)
+            UIView uiView = UIView.GetAView();
+            if (modPanel != null)
             {
-
+                modPanel.Show();
             }
+            else
+            {
+                modPanel = uiView.AddUIComponent(typeof(ModPanel)) as ModPanel;
+            }
+
+            m_isUiShowing = true;
+        }
+
+        private void hideUI()
+        {
+            if(modPanel != null)
+            {
+                modPanel.Hide();
+            }
+            m_isUiShowing = false;
+            EventBusManager.Instance().Publish("closeAll", null);
         }
     }
 }

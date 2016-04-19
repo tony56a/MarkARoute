@@ -8,13 +8,13 @@ using UnityEngine;
 
 namespace MarkARoute.UI
 {
-    class UsedRoutesPanel : UIPanel, IEventSubscriber
+    class DeleteSignPanel : UIPanel, IEventSubscriber
     {
         protected RectOffset m_UIPadding = new RectOffset(5, 5, 5, 5);
 
         private int titleOffset = 40;
         private TitleBar m_panelTitle;
-        public UIFastList usedRoutesList = null;
+        public UIFastList signsList = null;
 
         private Vector2 offset = Vector2.zero;
 
@@ -33,7 +33,7 @@ namespace MarkARoute.UI
             base.Start();
 
             m_panelTitle = this.AddUIComponent<TitleBar>();
-            m_panelTitle.title = "Existing routes";
+            m_panelTitle.title = "Existing Signs";
             m_panelTitle.m_closeActions.Add("closeAll");
 
             CreatePanelComponents();
@@ -45,41 +45,43 @@ namespace MarkARoute.UI
         private void CreatePanelComponents()
         {
 
-            usedRoutesList = UIFastList.Create<UsedRouteRowItem>(this);
-            usedRoutesList.backgroundSprite = "UnlockingPanel";
-            usedRoutesList.size = new Vector2(this.width - m_UIPadding.left - m_UIPadding.right, (this.height - titleOffset - m_UIPadding.top - m_UIPadding.bottom));
-            usedRoutesList.canSelect = false;
-            usedRoutesList.relativePosition = new Vector2(m_UIPadding.left, titleOffset + m_UIPadding.top);
-            usedRoutesList.rowHeight = 40f;
-            usedRoutesList.rowsData.Clear();
-            usedRoutesList.selectedIndex = -1;
+            signsList = UIFastList.Create <DeleteSignRowItem>(this);
+            signsList.backgroundSprite = "UnlockingPanel";
+            signsList.size = new Vector2(this.width - m_UIPadding.left - m_UIPadding.right, (this.height - titleOffset - m_UIPadding.top - m_UIPadding.bottom));
+            signsList.canSelect = false;
+            signsList.relativePosition = new Vector2(m_UIPadding.left, titleOffset + m_UIPadding.top);
+            signsList.rowHeight = 80f;
+            signsList.rowsData.Clear();
+            signsList.selectedIndex = -1;
 
             RefreshList();
         }
 
         public void RefreshList()
         {
-
-            usedRoutesList.rowsData.Clear();
-            foreach (string route in RouteManager.Instance().m_usedRoutes.Keys)
+            signsList.rowsData.Clear();
+            foreach (SignContainer signContainer in RouteManager.Instance().m_signList)
             {
-                usedRoutesList.rowsData.Add(route);
+                signsList.rowsData.Add(signContainer);
             }
-            usedRoutesList.DisplayAt(0);
-            usedRoutesList.selectedIndex = 0;
+            signsList.DisplayAt(0);
+            signsList.selectedIndex = 0;
         }
 
         public void onReceiveEvent(string eventName, object eventData)
         {
-            string message = eventData as string;
             switch (eventName)
             {
-                case "forceupdateroutes":
+                case "deleteSign":
+                    SignContainer container = eventData as SignContainer;
+                    GameObject.Destroy(container.m_signObj);
+                    RouteManager.Instance().m_signList.Remove(container);
                     RefreshList();
                     break;
-                case "closeUsedNamePanel":
-                    Hide();
+                case "forceUpdateSigns":
+                    RefreshList();
                     break;
+                case "closeSignDeletePanel":
                 case "closeAll":
                     Hide();
                     break;

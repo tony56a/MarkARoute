@@ -8,44 +8,26 @@ using UnityEngine;
 
 namespace MarkARoute.Utils
 {
-    [Serializable()]
-    [XmlRoot(ElementName = "RouteShieldDocument")]
-    class RouteShieldConfig
-    {
 
+    public class RouteShieldConfig
+    {
         private static Dictionary<string, RouteShieldInfo> fallbackDict = new Dictionary<string, RouteShieldInfo>()
         {
-            { "BC",new RouteShieldInfo(-0.25f, 0f, 0.5f, new Color32(50,46,136,255), "BC", "Icons/BC.png") },
-            { "ON",new RouteShieldInfo(-0.65f, 0f, 0.5f, Color.black, "ON", "Icons/ON.png") },
-            { "I",new RouteShieldInfo(-0.25f, 0f, 0.6f, Color.white, "I", "Icons/I.png") },
-            { "US",new RouteShieldInfo(0f, 0f, 0.7f, Color.black, "US", "Icons/US.png") },
-            { "AUS",new RouteShieldInfo(-0.25f, 0f, 0.5f, Color.white, "AUS", "Icons/AUS.png") },
-            { "route",new RouteShieldInfo(0f, -0.5f, 0.3f, Color.white, "route", "Icons/route.png") },
+            { "BC",new RouteShieldInfo(-0.25f, 0f, 0.5f, new Color(0,0,0.58137f), "BC") },
+            { "ON",new RouteShieldInfo(-0.65f, 0f, 0.5f, Color.black, "ON") },
+            { "I",new RouteShieldInfo(-0.25f, 0f, 0.6f, Color.white, "I") },
+            { "US",new RouteShieldInfo(0f, 0f, 0.7f, Color.black, "US") },
+            { "AUS",new RouteShieldInfo(-0.25f, 0f, 0.5f, Color.white, "AUS") },
+            { "route",new RouteShieldInfo(0f, -0.5f, 0.3f, Color.white, "route") },
+            { "DE",new RouteShieldInfo(0f, 0f, 0.5f, Color.white, "DE") },
+            { "CN",new RouteShieldInfo(-0.2f, 0f, 0.6f, Color.white, "CN") },
+            { "NL",new RouteShieldInfo(0f, 0f, 0.7f, Color.white, "NL") },
+            { "TO",new RouteShieldInfo(0f, 0f, 0.5f, Color.black, "TO") },
+
 
         };
 
-        [XmlIgnore]
-        public Dictionary<string, RouteShieldInfo> routeShieldDictionary
-        {
-            get
-            {
-                return routeShieldInfoList == null ?
-                        fallbackDict :
-                        routeShieldInfoList.ToDictionary(item => item.Key, item => item.Value);
-            }
-
-            set
-            {
-                routeShieldInfoList = value == null ?
-                                    fallbackDict.ToList() :
-                                    value.ToList();
-            }
-        }
-
-
-        [XmlArray("RouteShieldInfoList")]
-        [XmlArrayItem("RouteShieldInfo", typeof(RouteShieldInfo))]
-        public List<KeyValuePair<string, RouteShieldInfo>> routeShieldInfoList { get; set; }
+        public Dictionary<string, RouteShieldInfo> routeShieldDictionary;
 
         public RouteShieldInfo GetRouteShieldInfo(string key)
         {
@@ -55,8 +37,7 @@ namespace MarkARoute.Utils
             }
             else
             {
-                // Use a known value 
-                return fallbackDict["route"];
+                return null;
             }
         }
 
@@ -90,25 +71,26 @@ namespace MarkARoute.Utils
         {
             if (File.Exists("RouteShieldOptions.xml"))
             {
-                XmlSerializer xmlSerialiser = new XmlSerializer(typeof(RouteShieldConfig));
+                XmlSerializer serializer = new XmlSerializer(typeof(RouteShieldObject[]),new XmlRootAttribute() { ElementName = "RouteInfoItems" });
                 StreamReader reader = new StreamReader("RouteShieldOptions.xml");
-
-                RouteShieldConfig routeShieldUtility = xmlSerialiser.Deserialize(reader) as RouteShieldConfig;
+                Dictionary<string, RouteShieldInfo> routeShieldDict = ((RouteShieldObject[])serializer.Deserialize(reader)).ToDictionary(i => i.key, i => i.value);
                 reader.Close();
 
-                if (routeShieldUtility != null)
+                if (routeShieldDict != null)
                 {
-                    SetInstance(routeShieldUtility);
+                    Instance().routeShieldDictionary = routeShieldDict;
 
                     LoggerUtils.Log("Loaded route shield info file.");
                 }
                 else
                 {
+                    Instance().routeShieldDictionary = fallbackDict;
                     LoggerUtils.LogError("Created route shield info is invalid!");
                 }
             }
             else
             {
+                Instance().routeShieldDictionary = fallbackDict;
                 LoggerUtils.LogWarning("Could not load the route shield info file!");
             }
         }
@@ -118,54 +100,63 @@ namespace MarkARoute.Utils
         /// </summary>
         public static void SaveRouteShieldInfo()
         {
-            if (File.Exists("RouteShieldOptions.xml"))
-            {
-                XmlSerializer xmlSerialiser = new XmlSerializer(typeof(RouteShieldConfig));
-                StreamWriter writer = new StreamWriter("RouteShieldOptions.xml");
+            XmlSerializer serializer = new XmlSerializer(typeof(RouteShieldObject[]), new XmlRootAttribute() { ElementName = "RouteInfoItems" });
+            StreamWriter writer = new StreamWriter("RouteShieldOptions.xml");
 
-                xmlSerialiser.Serialize(writer, instance);
-                writer.Close();
+            serializer.Serialize(writer, instance.routeShieldDictionary.Select(kv => new RouteShieldObject() { key = kv.Key, value = kv.Value }).ToArray());
+            writer.Close();
 
+            LoggerUtils.Log("Saved route shield info file.");
 
-                LoggerUtils.Log("Saved route shield info file.");
-
-            }
-            else
-            {
-                LoggerUtils.LogWarning("Could not save the route shield info file!");
-            }
-        }
-    }
-
-    [Serializable()]
-    public class RouteShieldInfo
-    {
-        [XmlElement(IsNullable = false)]
-        public float upOffset = 0f;
-
-        [XmlElement(IsNullable = false)]
-        public float leftOffset = 0f;
-
-        [XmlElement(IsNullable = false)]
-        public Color textColor = Color.black;
-
-        [XmlElement(IsNullable = false)]
-        public float textScale = 0.5f;
-
-        [XmlElement(IsNullable = false)]
-        public String textureName = "";
-
-        [XmlElement(IsNullable = false)]
-        public String texturePath = "";
-
-        public RouteShieldInfo(float upOffset, float leftOffset, float textScale, Color textColor, string textureName, string texturePath)
-        {
-            this.upOffset = upOffset;
-            this.leftOffset = leftOffset;
-            this.textColor = textColor;
-            this.textScale = textScale;
-            this.textureName = textureName;
-            this.texturePath = texturePath;
         }
     }
 }
+
+[Serializable]
+public class RouteShieldObject
+{
+    //TODO: replace this( and serialization entirely ) with JSON, since dictionaries are supported by default.
+    [XmlElement("RouteShieldKey")]
+    public string key;
+    [XmlElement("RouteShieldInfo")]
+    public RouteShieldInfo value;
+}
+
+[Serializable]
+public class RouteShieldInfo
+{
+    [XmlElement("UpOffset",IsNullable = false)]
+    public float upOffset = 0f;
+
+    [XmlElement("LeftOffset",IsNullable = false)]
+    public float leftOffset = 0f;
+
+    [XmlElement("TextColor",IsNullable = false)]
+    public Color textColor = Color.black;
+
+    [XmlElement("TextScale",IsNullable = false)]
+    public float textScale = 0.5f;
+
+    [XmlElement("TextureName",IsNullable = false)]
+    public String textureName = "";
+
+    public RouteShieldInfo()
+    {
+        // Default Constructor without parameter
+    }
+
+    public RouteShieldInfo(string textureName)
+    {
+        this.textureName = textureName;
+    }
+
+    public RouteShieldInfo(float upOffset, float leftOffset, float textScale, Color textColor, string textureName)
+    {
+        this.upOffset = upOffset;
+        this.leftOffset = leftOffset;
+        this.textColor = textColor;
+        this.textScale = textScale;
+        this.textureName = textureName;
+    }
+}
+

@@ -17,11 +17,11 @@ namespace MarkARoute.Utils
         /// <param name="texturePath"> The path of the texture</param>
         /// <param name="textureName"> The name of the texture</param>
         /// <returns></returns>
-        public static bool AddTexture(string texturePath, string textureName)
+        public static bool AddTexture(string fullPath, string textureName)
         {
             Shader shader = Shader.Find("UI/Default UI Shader");
             string modPath = FileUtils.GetModPath();
-            string fullPath = modPath + "/" + texturePath;
+            //string fullPath = modPath + "/" + texturePath;
 
             if (!shader || !File.Exists(fullPath))
             {

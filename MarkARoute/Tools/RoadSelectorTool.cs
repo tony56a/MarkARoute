@@ -14,6 +14,8 @@ namespace MarkARoute.Tools
     {
         public RouteNamePanel m_namingPanel = null;
         public UsedRoutesPanel m_usedRoutesPanel = null;
+        public bool isDynamic = false;
+        public DynamicSignPlacementTool m_dynamicSignPlacementTool = null;
 
         protected override void Awake()
         {
@@ -43,7 +45,7 @@ namespace MarkARoute.Tools
                 if (RaycastRoad(out raycastOutput))
                 {
                     ushort netSegmentId = raycastOutput.m_netSegment;
-
+                    ushort nodeId = raycastOutput.m_netNode;
                     if (netSegmentId != 0)
                     {
                         NetManager netManager = NetManager.instance;
@@ -63,23 +65,40 @@ namespace MarkARoute.Tools
                                     Vector3 rotation = netSegment.GetDirection(netSegment.m_startNode);
                                     LoggerUtils.LogToConsole(rotation.ToString());
 #endif
-                                    m_namingPanel.m_initialRouteStr = RouteManager.Instance().GetRouteStr(netSegmentId);
-                                    m_namingPanel.m_initialRoutePrefix = RouteManager.Instance().GetRouteType(netSegmentId);
-                                    m_namingPanel.UpdateTextField();
+                                    if(!isDynamic)
+                                    {
+                                        m_namingPanel.m_initialRouteStr = RouteManager.Instance().GetRouteStr(netSegmentId);
+                                        m_namingPanel.m_initialRoutePrefix = RouteManager.Instance().GetRouteType(netSegmentId);
+                                        m_namingPanel.UpdateTextField();
 
-                                    m_namingPanel.m_netSegmentId = netSegmentId;
-                                    m_namingPanel.m_netSegmentName = netSegment.Info.name.Replace(" ", "");
-                                    m_namingPanel.Show();
-                                    m_usedRoutesPanel.RefreshList();
-                                    m_usedRoutesPanel.Show();
-
-                                    /*OptionsManager.m_hasOpenedPanel = true;
-                                    OptionsManager.SaveOptions();*/
+                                        m_namingPanel.m_netSegmentId = netSegmentId;
+                                        m_namingPanel.m_netSegmentName = netSegment.Info.name.Replace(" ", "");
+                                        m_namingPanel.Show();
+                                        m_usedRoutesPanel.RefreshList();
+                                        m_usedRoutesPanel.Show();
+                                    }
+                                    else
+                                    {
+                                        m_dynamicSignPlacementTool.segmentId = netSegmentId;
+                                        m_dynamicSignPlacementTool.routeStr = RouteManager.Instance().GetRouteStr(netSegmentId);
+                                        m_dynamicSignPlacementTool.routePrefix = RouteManager.Instance().GetRouteType(netSegmentId);
+                                        ToolsModifierControl.toolController.CurrentTool = m_dynamicSignPlacementTool;
+                                        ToolsModifierControl.SetTool<DynamicSignPlacementTool>();
+                                        EventBusManager.Instance().Publish("closeAll", null);
+                                    }
+                                  
                                 }
                             }
                             else
                             {
-                                ShowToolInfo(true, "Mark this route", netSegment.m_bounds.center);
+                                if (!isDynamic)
+                                {
+                                    ShowToolInfo(true, "Mark this route", netSegment.m_bounds.center);
+                                }
+                                else
+                                {
+                                    ShowToolInfo(true, "Add a traffic sign here", netSegment.m_bounds.center);
+                                }
                             }
                         }
                     }

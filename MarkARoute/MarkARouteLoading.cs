@@ -1,4 +1,5 @@
 ﻿using ColossalFramework;
+using ColossalFramework.Packaging;
 using ColossalFramework.UI;
 using ICities;
 using MarkARoute.Managers;
@@ -6,6 +7,7 @@ using MarkARoute.UI;
 using MarkARoute.Utils;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -14,7 +16,6 @@ namespace MarkARoute
 {
     public class MarkARouteLoading : LoadingExtensionBase
     {
-
 
         private MarkARouteSerializer m_saveUtility = new MarkARouteSerializer();
         private RenderingManager m_renderingManager = null;
@@ -38,9 +39,7 @@ namespace MarkARoute
             {
                 UIView view = UIView.GetAView();
                 UITabstrip tabStrip = null;
-
-
-
+                
                 UI = ToolsModifierControl.toolController.gameObject.AddComponent<MainPanel>();
 
                 m_renderingManager = RenderingManager.instance;
@@ -52,14 +51,14 @@ namespace MarkARoute
                     m_renderingManager.m_registered = true;
                 }
 
-                /*OptionsManager.m_isIngame = true;
-                OptionsManager.UpdateEverything();*/
+                MarkARouteOptions.mInGame = true;
+                MarkARouteOptions.update();
             }
         }
 
         public override void OnLevelUnloading()
         {
-            //OptionsManager.m_isIngame = false;
+            MarkARouteOptions.mInGame = false;
         }
 
         /// <summary>
@@ -70,14 +69,43 @@ namespace MarkARoute
             bool spriteSuccess = true;
             //TODO: Replace with a loader function( JSON mapping available )
             RouteShieldConfig.LoadRouteShieldInfo();
-            foreach (KeyValuePair<string, RouteShieldInfo> shieldInfo in RouteShieldConfig.Instance().routeShieldDictionary)
+            string[] files = Directory.GetFiles(FileUtils.GetModPath()+ "/Icons");
+            foreach ( string file in files)
             {
-                spriteSuccess = SpriteUtils.AddTexture(shieldInfo.Value.texturePath, shieldInfo.Key) && spriteSuccess;
+                string[] splitValues = file.Split('\\');
+                string fileName = splitValues[splitValues.Length - 1];
+                string fileKey = fileName.Split('.')[0];
+                spriteSuccess = SpriteUtils.AddTexture(file, fileKey) && spriteSuccess;
+                if(!RouteShieldConfig.Instance().routeShieldDictionary.ContainsKey(fileKey))
+                {
+                    RouteShieldConfig.Instance().routeShieldDictionary[fileKey] = new RouteShieldInfo(fileKey);
+                }
+            }
+
+            files = Directory.GetFiles(FileUtils.GetModPath() + "/Shaders");
+            foreach (string file in files)
+            {
+                string[] splitValues = file.Split('\\');
+                string fileName = splitValues[splitValues.Length - 1];
+                string fileKey = fileName.Split('.')[0];
+                spriteSuccess = ShaderUtils.AddShader(file, fileKey) && spriteSuccess;
+            }
+
+            string fontFile = FileUtils.GetModPath() + "\\test";
+            string fontDst = "test";
+            if (File.Exists(fontFile))
+            {
+                File.Copy(fontFile, fontDst, true);
+
             }
 
             if (!spriteSuccess)
             {
                 LoggerUtils.LogError("Failed to load some sprites!");
+            }
+            else
+            {
+                RouteShieldConfig.SaveRouteShieldInfo();
             }
         }
     }
