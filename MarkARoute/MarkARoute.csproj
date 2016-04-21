@@ -53,7 +53,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Managers\DynamicMonitorManager.cs" />
     <Compile Include="ThreadingMonitor.cs" />
     <Compile Include="Managers\EventBusManager.cs" />
     <Compile Include="Managers\RenderingManager.cs" />
@@ -65,6 +64,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tools\DynamicSignPlacementTool.cs" />
     <Compile Include="Tools\RoadSelectorTool.cs" />
+    <Compile Include="Tools\SignDeletionTool.cs" />
     <Compile Include="Tools\SignPlacementTool.cs" />
     <Compile Include="Tools\StaticSignPlacementTool.cs" />
     <Compile Include="UI\AddSignPanel.cs" />
@@ -78,6 +78,7 @@
     <Compile Include="UI\UIUtils.cs" />
     <Compile Include="UI\UsedRouteRowItem.cs" />
     <Compile Include="UI\UsedRoutesPanel.cs" />
+    <Compile Include="Utils\DynamicSignConfig.cs" />
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\LoggerUtils.cs" />
     <Compile Include="Utils\MeshUtils.cs" />

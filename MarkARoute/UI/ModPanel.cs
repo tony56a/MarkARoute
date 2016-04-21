@@ -18,11 +18,13 @@ namespace MarkARoute.UI
         private RoadSelectorTool mRoadSelectTool;
         private StaticSignPlacementTool mSignPlacementTool;
         private DynamicSignPlacementTool mDynamicSignPlacementTool;
+        private SignDeletionTool mSignDeletionTool;
 
         private UIButton markRouteBtn;
         private UIButton addSignBtn;
         private UIButton deleteSignBtn;
         private UIButton addDynamicSignBtn;
+        private UIButton deleteDynamicSignBtn;
 
         private GameObject m_namingPanelObject;
         private GameObject m_usedRoutesPanelObject;
@@ -49,9 +51,10 @@ namespace MarkARoute.UI
             deleteSignBtn = getButton(yCursor, "Delete a Sign", deleteSignBtn_eventClick);
             yCursor += (30 + PADDING);
             addDynamicSignBtn = getButton(yCursor, "Add a dynamic Sign", addDynamicSignBtn_eventClick);
+            yCursor += (30 + PADDING);
+            deleteDynamicSignBtn = getButton(yCursor, "Delete a dynamic Sign", deleteDynamicSignBtn_eventClick);
 
             this.height = addDynamicSignBtn.relativePosition.y + addDynamicSignBtn.height + PADDING * 2;
-
 
             m_namingPanelObject = new GameObject("RouteNamePanel");
             m_namingPanel = m_namingPanelObject.AddComponent<RouteNamePanel>();
@@ -85,6 +88,7 @@ namespace MarkARoute.UI
             EventBusManager.Instance().Subscribe("updateroutepaneltext", m_namingPanel);
 
             mDynamicSignPlacementTool = ToolsModifierControl.toolController.gameObject.AddComponent<DynamicSignPlacementTool>();
+            mSignDeletionTool = ToolsModifierControl.toolController.gameObject.AddComponent<SignDeletionTool>();
 
             mSignPlacementTool = ToolsModifierControl.toolController.gameObject.AddComponent<StaticSignPlacementTool>();
             m_addSignPanel.mSignPlacementTool = mSignPlacementTool;
@@ -125,6 +129,22 @@ namespace MarkARoute.UI
             button.eventClick += handler;
             button.relativePosition = new Vector3(PADDING , y);
             return button;
+        }
+
+        private void deleteDynamicSignBtn_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            mSignDeletionTool.isDynamic = true;
+            if (ToolsModifierControl.toolController.CurrentTool != mSignDeletionTool)
+            {
+                ToolsModifierControl.toolController.CurrentTool = mSignDeletionTool;
+                ToolsModifierControl.SetTool<SignDeletionTool>();
+            }
+            else
+            {
+                ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
+                ToolsModifierControl.SetTool<DefaultTool>();
+            }
+            EventBusManager.Instance().Publish("closeAll", null);
         }
 
         private void addDynamicSignBtn_eventClick(UIComponent component, UIMouseEventParameter eventParam)
@@ -180,19 +200,18 @@ namespace MarkARoute.UI
 
         private void deleteSignBtn_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
-            EventBusManager.Instance().Publish("forceUpdateSigns", null);
-
-            if (m_deleteSignPanel.isVisible)
+            mSignDeletionTool.isDynamic = false;
+            if (ToolsModifierControl.toolController.CurrentTool != mSignDeletionTool)
             {
-                m_deleteSignPanel.isVisible = false;
-                m_deleteSignPanel.Hide();
-
+                ToolsModifierControl.toolController.CurrentTool = mSignDeletionTool;
+                ToolsModifierControl.SetTool<SignDeletionTool>();
             }
             else
             {
-                m_deleteSignPanel.isVisible = true;
-                m_deleteSignPanel.Show();
+                ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
+                ToolsModifierControl.SetTool<DefaultTool>();
             }
+            EventBusManager.Instance().Publish("closeAll", null);
         }
 
     }

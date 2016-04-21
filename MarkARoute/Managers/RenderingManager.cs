@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Timers;
 using UnityEngine;
 
 namespace MarkARoute.Managers
@@ -15,6 +16,7 @@ namespace MarkARoute.Managers
         private Material m_nameMaterial = null;
         private Material m_iconMaterial = null;
         private Font m_customFont = null;
+        private Font m_dynamicCustomFont = null;
 
         private int m_lastCount = 0;
         private bool textHidden = false;
@@ -26,6 +28,24 @@ namespace MarkARoute.Managers
         public PropInfo m_signPropInfo = null;
         public PropInfo m_dynamicSignPropInfo = null;
 
+        Timer messageUpdateTimer = new Timer();
+        public volatile bool m_updateDynamicSignFlag = false;
+        System.Random messageRandom = new System.Random();
+        public void initTimer()
+        {
+            messageUpdateTimer.Interval = 5000;
+            messageUpdateTimer.Elapsed += MessageUpdateTimer_Elapsed;
+            messageUpdateTimer.AutoReset = true;
+            messageUpdateTimer.Enabled = true;
+        }
+
+        public void disableTimer()
+        {
+            messageUpdateTimer.Enabled = false;
+            messageUpdateTimer.Stop();
+            messageUpdateTimer.Dispose();
+          
+        }
 
         protected override void Awake()
         {
@@ -42,6 +62,7 @@ namespace MarkARoute.Managers
             this.m_iconMaterial.CopyPropertiesFromMaterial(districtManager.m_properties.m_areaIconAtlas.material);
 
             m_customFont = Font.CreateDynamicFontFromOSFont("Highway Gothic", districtManager.m_properties.m_areaNameFont.baseFont.fontSize);
+            m_dynamicCustomFont = Font.CreateDynamicFontFromOSFont("Electronic Highway Sign", districtManager.m_properties.m_areaNameFont.baseFont.fontSize);
 
             for (uint i = 0; i < PrefabCollection<PropInfo>.LoadedCount(); ++i)
             {
@@ -54,11 +75,14 @@ namespace MarkARoute.Managers
                     this.m_dynamicSignPropInfo = PrefabCollection<PropInfo>.GetLoaded(i);
                 }
             }
+            //Only start dynamic signs after everything's loaded
+            RenderingManager.instance.initTimer();
         }
 
         protected override void BeginOverlayImpl(RenderManager.CameraInfo cameraInfo)
         {
-            DistrictManager districtManager = Singleton<DistrictManager>.instance;
+            NetManager netManager = NetManager.instance;
+            DistrictManager districtManager = DistrictManager.instance;
 
             if (m_lastCount != RouteManager.Instance().m_routeDict.Count)
             {
@@ -112,6 +136,37 @@ namespace MarkARoute.Managers
                 }
                 textHidden = false;
             }
+
+            if( m_updateDynamicSignFlag)
+            {
+                
+                m_updateDynamicSignFlag = false;
+                float avg;
+                float lowTrafficMsgChance;
+                foreach (DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignDict.Values)
+                {
+                    avg = (float)sign.m_trafficDensity;
+                    lowTrafficMsgChance = 0.25f;
+                    avg -= sign.m_trafficDensity / 3;
+                    avg += netManager.m_segments.m_buffer[sign.m_segment].m_trafficDensity / 3;
+                    sign.m_trafficDensity = avg;
+                    String msgText = (sign.m_route == null ? "Traffic" : (sign.m_routePrefix + '-' + sign.m_route)) +
+                    String.Format(" moving {0}", sign.m_trafficDensity > 65 ? "slowly" : "well" );
+
+                    if( sign.m_trafficDensity < 35)
+                    {
+                        lowTrafficMsgChance = 0.8f;
+                    }
+                    else
+                    {
+                        lowTrafficMsgChance = 0.1f;
+                    }
+
+                    sign.m_messageTextMesh.text = ( messageRandom.NextDouble() > lowTrafficMsgChance ) ? msgText : 
+                        DynamicSignConfig.fallbackMsgStrings[messageRandom.Next(DynamicSignConfig.fallbackMsgStrings.Length)];
+                }
+            }
+         
         }
 
         /// <summary>
@@ -122,15 +177,16 @@ namespace MarkARoute.Managers
         {
 
             DistrictManager districtManager = DistrictManager.instance;
+            NetManager netManager = NetManager.instance;
 
             if (districtManager.m_properties.m_areaNameFont != null)
             {
                 UIFontManager.Invalidate(districtManager.m_properties.m_areaNameFont);
 
-                NetManager netManager = NetManager.instance;
-
                 foreach (RouteContainer route in RouteManager.Instance().m_routeDict.Values)
                 {
+
+
                     if (route.m_segmentId != 0)
                     {
                         string routeStr = route.m_route;
@@ -193,6 +249,7 @@ namespace MarkARoute.Managers
 
                 foreach (SignContainer sign in RouteManager.Instance().m_signList)
                 {
+
                     Vector3 position = new Vector3(sign.x, sign.y, sign.z);
 
                     sign.m_sign.GetComponent<Renderer>().material = this.m_signPropInfo.m_material;
@@ -200,7 +257,7 @@ namespace MarkARoute.Managers
                     sign.m_sign.mesh = this.m_signPropInfo.m_mesh;
                     sign.m_sign.transform.position = position;
 
-                    if( sign.m_routePrefix != null)
+                    if ( sign.m_routePrefix != null)
                     {
                         RouteShieldInfo shieldInfo = RouteShieldConfig.Instance().GetRouteShieldInfo(sign.m_routePrefix);
                         Material mat = SpriteUtils.m_textureStore[shieldInfo.textureName];
@@ -271,8 +328,8 @@ namespace MarkARoute.Managers
                     sign.m_sign.mesh = this.m_dynamicSignPropInfo.m_mesh;
                     sign.m_sign.transform.position = position;
 
-                    sign.m_messageTextMesh.anchor = TextAnchor.MiddleCenter;
-                    sign.m_messageTextMesh.font = districtManager.m_properties.m_areaNameFont.baseFont;
+                    sign.m_messageTextMesh.anchor = TextAnchor.MiddleLeft;
+                    sign.m_messageTextMesh.font = m_dynamicCustomFont == null ? districtManager.m_properties.m_areaNameFont.baseFont : m_dynamicCustomFont;
                     sign.m_messageTextMesh.font.material.shader = ShaderUtils.m_shaderStore["Font"];
                     sign.m_messageTextMesh.color = (new Color(1, 0.77f, 0.56f, 1f));
                     sign.m_messageTextMesh.font.material.SetColor("Text Color", new Color(1, 0.77f, 0.56f, 1f));
@@ -294,9 +351,17 @@ namespace MarkARoute.Managers
                                      " moving smoothly";
                     sign.m_messageTextMesh.text = msgText;
 
-                    sign.m_messageTextMesh.transform.localPosition = new Vector3(0.7f, 8f, -12.7f);
+                    sign.m_messageTextMesh.transform.localPosition = new Vector3(0.7f, 8.4f, -19.7f);
                 }
 
+            }
+        }
+
+        private void MessageUpdateTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if(!m_updateDynamicSignFlag)
+            {
+                m_updateDynamicSignFlag = true;
             }
         }
 

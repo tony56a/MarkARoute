@@ -204,7 +204,9 @@ namespace MarkARoute.Managers
                 {
                     routeContainer = new RouteContainer(segmentId, routePrefix, route);
                 }
+
                 m_routeDict[segmentId] = routeContainer;
+
                 if (routeContainer.m_shieldObject == null)
                 {
                     routeContainer.m_shieldObject = new GameObject(segmentId + "shield");
@@ -335,6 +337,8 @@ namespace MarkARoute.Managers
         public float y = 0;
         public float z = 0;
         public float angle = 0;
+        [NonSerialized]
+        public Vector3 pos = new Vector3();
 
         [NonSerialized]
         public MeshFilter m_sign;
@@ -361,38 +365,26 @@ namespace MarkARoute.Managers
             m_routePrefix = routePrefix;
             m_route = route;
             m_destination = destination;
+            this.pos = pos;
             x = pos.x;
             y = pos.y;
             z = pos.z;
             this.angle = angle;
         }
 
+        // Stub constructor to get compiler to stop complaining about child objects
+        public SignContainer(){}
+
     }
 
     [Serializable]
-    public class DynamicSignContainer
+    public class DynamicSignContainer : SignContainer
     {
 
         public ushort m_segment;
 
-        public float x = 0;
-        public float y = 0;
-        public float z = 0;
-        public float angle = 0;
-
-        [XmlElement(IsNullable = true)]
-        public string m_routePrefix = null;
-
-        [XmlElement(IsNullable = true)]
-        public string m_route = null;
-
         [NonSerialized]
         public float m_trafficDensity;
-
-        [NonSerialized]
-        public MeshFilter m_sign;
-        [NonSerialized]
-        public GameObject m_signObj;
 
         [NonSerialized]
         public GameObject m_messageTextMeshObj;
@@ -404,6 +396,7 @@ namespace MarkARoute.Managers
             m_routePrefix = routePrefix;
             m_route = route;
             m_segment = segment;
+            this.pos = pos;
             x = pos.x;
             y = pos.y;
             z = pos.z;

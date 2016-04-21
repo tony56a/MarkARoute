@@ -53,11 +53,14 @@ namespace MarkARoute
 
                 MarkARouteOptions.mInGame = true;
                 MarkARouteOptions.update();
+
             }
         }
 
         public override void OnLevelUnloading()
         {
+            // First disable dynamic sign updates
+            RenderingManager.instance.disableTimer();
             MarkARouteOptions.mInGame = false;
         }
 

@@ -184,6 +184,8 @@ namespace MarkARoute.Tools
             this.m_toolController.SetBrush((Texture2D)null, Vector3.zero, 1f);
             this.m_cachedPosition = this.m_mousePosition;
             this.m_cachedAngle = this.m_angle * (float)(Math.PI / 180.0);
+
+
         }
 
         public static void DispatchPlacementEffect(Vector3 pos, bool bulldozing)
