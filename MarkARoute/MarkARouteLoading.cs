@@ -94,12 +94,13 @@ namespace MarkARoute
                 spriteSuccess = ShaderUtils.AddShader(file, fileKey) && spriteSuccess;
             }
 
-            string fontFile = FileUtils.GetModPath() + "\\test";
-            string fontDst = "test";
-            if (File.Exists(fontFile))
+            files = Directory.GetFiles(FileUtils.GetModPath() + "/screens");
+            foreach (string file in files)
             {
-                File.Copy(fontFile, fontDst, true);
-
+                string[] splitValues = file.Split('\\');
+                string fileName = splitValues[splitValues.Length - 1];
+                string fileKey = fileName.Split('.')[0];
+                spriteSuccess = SpriteUtils.AddTexture(file, fileKey, isScreenTexture:true) && spriteSuccess;
             }
 
             if (!spriteSuccess)

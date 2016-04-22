@@ -101,18 +101,25 @@ namespace MarkARoute.Managers
             signContainer.m_signObj = new GameObject(segmentId + "dynamicsign");
             signContainer.m_signObj.AddComponent<MeshRenderer>();
             signContainer.m_sign = signContainer.m_signObj.AddComponent<MeshFilter>();
-            signContainer.m_messageTextMeshObj = new GameObject(position + "dynamicMsgText");
-            signContainer.m_messageTextMesh = signContainer.m_messageTextMeshObj.AddComponent<TextMesh>();
+            //signContainer.m_messageTextMeshObj = new GameObject(segmentId + "dynamicMsgText");
+            //signContainer.m_messageTextMesh = signContainer.m_messageTextMeshObj.AddComponent<TextMesh>();
+            signContainer.m_screenMeshObj = new GameObject(segmentId + "screen");
+            signContainer.m_screenMeshObj.AddComponent<MeshRenderer>();
+            signContainer.m_screenMesh = signContainer.m_screenMeshObj.AddComponent<MeshFilter>();
 
             signContainer.m_sign.transform.position = position;
             signContainer.m_sign.transform.Rotate(0, -1 * Mathf.Rad2Deg * signContainer.angle, 0);
 
-            signContainer.m_messageTextMesh.transform.position = position;
-            signContainer.m_messageTextMesh.transform.parent = signContainer.m_sign.transform;
+            signContainer.m_screenMesh.transform.parent = signContainer.m_sign.transform.transform;
+            signContainer.m_screenMesh.transform.position = position;
+            signContainer.m_screenMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle), 0);
+            signContainer.m_screenMesh.transform.localPosition = new Vector3(-0.04f, 6.6f, -0.3f);
 
+            /*
+            signContainer.m_messageTextMesh.transform.parent = signContainer.m_sign.transform;
             signContainer.m_messageTextMesh.transform.position = position;
             signContainer.m_messageTextMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270, 0);
-            signContainer.m_messageTextMesh.transform.localPosition = new Vector3(0.2f, 6f, -5.7f);
+            signContainer.m_messageTextMesh.transform.localPosition = new Vector3(0.2f, 6f, -5.7f);*/
 
             m_dynamicSignDict.Add(segmentId, signContainer);
         }
@@ -386,10 +393,15 @@ namespace MarkARoute.Managers
         [NonSerialized]
         public float m_trafficDensity;
 
-        [NonSerialized]
+        /*[NonSerialized]
         public GameObject m_messageTextMeshObj;
         [NonSerialized]
-        public TextMesh m_messageTextMesh;
+        public TextMesh m_messageTextMesh;*/
+
+        [NonSerialized]
+        public GameObject m_screenMeshObj;
+        [NonSerialized]
+        public MeshFilter m_screenMesh;
 
         public DynamicSignContainer(Vector3 pos, float angle, string routePrefix, string route, ushort segment)
         {

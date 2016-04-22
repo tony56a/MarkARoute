@@ -14,14 +14,14 @@ namespace MarkARoute.Utils
         /// <param name="width"></param>
         /// <param name="height"></param>
         /// <returns></returns>
-        public static Mesh CreateRectMesh(float width, float height)
+        public static Mesh CreateRectMesh(float width, float height, float scale=4)
         {
 
             Mesh mesh = new Mesh();
             float maxValue = width > height ? width : height;
 
-            width = (width / (maxValue)) * 4;
-            height = (height / (maxValue)) * 4;
+            width = (width / (maxValue)) * scale;
+            height = (height / (maxValue)) * scale;
             Vector3[] vertices = new Vector3[]
             {
             new Vector3( width, height,  0),

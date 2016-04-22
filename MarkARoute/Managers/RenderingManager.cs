@@ -27,10 +27,12 @@ namespace MarkARoute.Managers
         public bool m_routeEnabled = true;
         public PropInfo m_signPropInfo = null;
         public PropInfo m_dynamicSignPropInfo = null;
+        public PropInfo m_adSignPropInfo = null;
 
         Timer messageUpdateTimer = new Timer();
         public volatile bool m_updateDynamicSignFlag = false;
         System.Random messageRandom = new System.Random();
+
         public void initTimer()
         {
             messageUpdateTimer.Interval = 5000;
@@ -73,6 +75,10 @@ namespace MarkARoute.Managers
                 else if (PrefabCollection<PropInfo>.GetLoaded(i).name.ToLower().Contains("electronic_sign_gantry"))
                 {
                     this.m_dynamicSignPropInfo = PrefabCollection<PropInfo>.GetLoaded(i);
+                }
+                else if (PrefabCollection<PropInfo>.GetLoaded(i).name.ToLower().Contains("billboard"))
+                {
+                    this.m_adSignPropInfo = PrefabCollection<PropInfo>.GetLoaded(i);
                 }
             }
             //Only start dynamic signs after everything's loaded
@@ -145,7 +151,9 @@ namespace MarkARoute.Managers
                 float lowTrafficMsgChance;
                 foreach (DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignDict.Values)
                 {
-                    avg = (float)sign.m_trafficDensity;
+                    Material mat = SpriteUtils.m_screenTextureStore[messageRandom.Next(SpriteUtils.m_screenTextureStore.Count)];
+                    sign.m_screenMeshObj.GetComponent<Renderer>().material = mat;
+                    /*avg = (float)sign.m_trafficDensity;
                     lowTrafficMsgChance = 0.25f;
                     avg -= sign.m_trafficDensity / 3;
                     avg += netManager.m_segments.m_buffer[sign.m_segment].m_trafficDensity / 3;
@@ -163,7 +171,7 @@ namespace MarkARoute.Managers
                     }
 
                     sign.m_messageTextMesh.text = ( messageRandom.NextDouble() > lowTrafficMsgChance ) ? msgText : 
-                        DynamicSignConfig.fallbackMsgStrings[messageRandom.Next(DynamicSignConfig.fallbackMsgStrings.Length)];
+                        DynamicSignConfig.fallbackMsgStrings[messageRandom.Next(DynamicSignConfig.fallbackMsgStrings.Length)];*/
                 }
             }
          
@@ -185,8 +193,7 @@ namespace MarkARoute.Managers
 
                 foreach (RouteContainer route in RouteManager.Instance().m_routeDict.Values)
                 {
-
-
+                    
                     if (route.m_segmentId != 0)
                     {
                         string routeStr = route.m_route;
@@ -323,12 +330,26 @@ namespace MarkARoute.Managers
                 foreach( DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignDict.Values) {
                     Vector3 position = new Vector3(sign.x, sign.y, sign.z);
 
-                    sign.m_sign.GetComponent<Renderer>().material = this.m_dynamicSignPropInfo.m_material;
+                    sign.m_sign.GetComponent<Renderer>().material = this.m_adSignPropInfo.m_material;
                     //TODO: Make mesh size dependent on text size
-                    sign.m_sign.mesh = this.m_dynamicSignPropInfo.m_mesh;
+                    sign.m_sign.mesh = this.m_adSignPropInfo.m_mesh;
                     sign.m_sign.transform.position = position;
 
-                    sign.m_messageTextMesh.anchor = TextAnchor.MiddleLeft;
+                    Material mat = SpriteUtils.m_screenTextureStore[messageRandom.Next(SpriteUtils.m_screenTextureStore.Count)];
+                    sign.m_screenMeshObj.GetComponent<Renderer>().material = mat;
+
+                    //TODO: Make mesh size dependent on text size
+                    sign.m_screenMesh.mesh = MeshUtils.CreateRectMesh(mat.mainTexture.width, mat.mainTexture.height);
+                    sign.m_screenMesh.transform.position = position;
+
+                    //TODO: Bind the elevation of the mesh to the text z offset
+                    sign.m_screenMesh.transform.localPosition = new Vector3(-0.04f, 6.6f, -0.3f);
+                    sign.m_screenMesh.transform.localScale = new Vector3(0.775f, 0.765f, 0.5f);
+                    sign.m_screenMeshObj.GetComponent<Renderer>().sortingOrder = 1000;
+
+                    sign.m_screenMesh.transform.parent = sign.m_sign.transform;
+
+                    /*sign.m_messageTextMesh.anchor = TextAnchor.MiddleLeft;
                     sign.m_messageTextMesh.font = m_dynamicCustomFont == null ? districtManager.m_properties.m_areaNameFont.baseFont : m_dynamicCustomFont;
                     sign.m_messageTextMesh.font.material.shader = ShaderUtils.m_shaderStore["Font"];
                     sign.m_messageTextMesh.color = (new Color(1, 0.77f, 0.56f, 1f));
@@ -351,7 +372,9 @@ namespace MarkARoute.Managers
                                      " moving smoothly";
                     sign.m_messageTextMesh.text = msgText;
 
-                    sign.m_messageTextMesh.transform.localPosition = new Vector3(0.7f, 8.4f, -19.7f);
+                    sign.m_messageTextMesh.transform.localPosition = new Vector3(0.7f, 8.4f, -19.7f);*/
+
+
                 }
 
             }

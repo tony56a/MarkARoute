@@ -10,14 +10,14 @@ namespace MarkARoute.Utils
     public class SpriteUtils
     {
         public static Dictionary<string, Material> m_textureStore = new Dictionary<string, Material>();
-
+        public static List<Material> m_screenTextureStore = new List<Material>();
         /// <summary>
         /// Load an image file as a material for use when rendering route markers
         /// </summary>
         /// <param name="texturePath"> The path of the texture</param>
         /// <param name="textureName"> The name of the texture</param>
         /// <returns></returns>
-        public static bool AddTexture(string fullPath, string textureName)
+        public static bool AddTexture(string fullPath, string textureName, bool isScreenTexture=false)
         {
             Shader shader = Shader.Find("UI/Default UI Shader");
             string modPath = FileUtils.GetModPath();
@@ -38,7 +38,14 @@ namespace MarkARoute.Utils
 
             Material material = new Material(shader);
             material.mainTexture = texture;
-            m_textureStore[textureName] = material;
+            if( !isScreenTexture)
+            {
+                m_textureStore[textureName] = material;
+            }
+            else
+            {
+                m_screenTextureStore.Add(material);
+            }
             return true;
         }
 
