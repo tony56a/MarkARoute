@@ -137,16 +137,15 @@ namespace MarkARoute.Managers
                 textHidden = false;
             }
 
-            if( m_updateDynamicSignFlag)
+            if(m_updateDynamicSignFlag)
             {
                 
                 m_updateDynamicSignFlag = false;
                 float avg;
                 float lowTrafficMsgChance;
-                foreach (DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignDict.Values)
+                foreach (DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignList)
                 {
                     avg = (float)sign.m_trafficDensity;
-                    lowTrafficMsgChance = 0.25f;
                     avg -= sign.m_trafficDensity / 3;
                     avg += netManager.m_segments.m_buffer[sign.m_segment].m_trafficDensity / 3;
                     sign.m_trafficDensity = avg;
@@ -163,7 +162,7 @@ namespace MarkARoute.Managers
                     }
 
                     sign.m_messageTextMesh.text = ( messageRandom.NextDouble() > lowTrafficMsgChance ) ? msgText : 
-                        DynamicSignConfig.fallbackMsgStrings[messageRandom.Next(DynamicSignConfig.fallbackMsgStrings.Length)];
+                        DynamicSignConfig.Instance().msgStrings[messageRandom.Next(DynamicSignConfig.Instance().msgStrings.Count)];
                 }
             }
          
@@ -320,7 +319,7 @@ namespace MarkARoute.Managers
                     
                 }
 
-                foreach( DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignDict.Values) {
+                foreach( DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignList) {
                     Vector3 position = new Vector3(sign.x, sign.y, sign.z);
 
                     sign.m_sign.GetComponent<Renderer>().material = this.m_dynamicSignPropInfo.m_material;

@@ -14,7 +14,6 @@ namespace MarkARoute.Managers
         /// <summary>
         /// Dictionary of routes already used, to the number of segments that use that route
         /// </summary> 
-        public Dictionary<string, int> m_usedNames = new Dictionary<string, int>();
         public Dictionary<string, int> m_usedRoutes = new Dictionary<string, int>();
 
         /// <summary>
@@ -24,7 +23,7 @@ namespace MarkARoute.Managers
 
         public List<SignContainer> m_signList = new List<SignContainer>(0);
 
-        public Dictionary<ushort, DynamicSignContainer> m_dynamicSignDict = new Dictionary<ushort, DynamicSignContainer>();
+        public List<DynamicSignContainer> m_dynamicSignList = new List<DynamicSignContainer>();
 
 
         public static RouteManager Instance()
@@ -114,7 +113,7 @@ namespace MarkARoute.Managers
             signContainer.m_messageTextMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270, 0);
             signContainer.m_messageTextMesh.transform.localPosition = new Vector3(0.2f, 6f, -5.7f);
 
-            m_dynamicSignDict.Add(segmentId, signContainer);
+            m_dynamicSignList.Add(signContainer);
         }
 
         public void SetSign(Vector3 position, float angle, string routePrefix, string route, string destination)
@@ -281,7 +280,7 @@ namespace MarkARoute.Managers
             }
         }
 
-        internal void LoadSigns(SignContainer[] signContainers)
+        public void LoadSigns(SignContainer[] signContainers)
         {
             if (signContainers != null)
             {
@@ -291,6 +290,18 @@ namespace MarkARoute.Managers
                 }
             }
         }
+
+        public void LoadDynamicSigns(DynamicSignContainer[] dynamicSignContainers)
+        {
+            if (dynamicSignContainers != null)
+            {
+                foreach (DynamicSignContainer sign in dynamicSignContainers)
+                {
+                    SetDynamicSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_segment);
+                }
+            }
+        }
+
     }
 
     [Serializable]

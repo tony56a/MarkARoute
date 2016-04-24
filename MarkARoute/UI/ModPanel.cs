@@ -34,7 +34,6 @@ namespace MarkARoute.UI
         private AddSignPanel m_addSignPanel;
         private RouteNamePanel m_namingPanel;
         private UsedRoutesPanel m_usedRoutesPanel;
-        private DeleteSignPanel m_deleteSignPanel;
 
         public ModPanel()
         {
@@ -54,7 +53,7 @@ namespace MarkARoute.UI
             yCursor += (30 + PADDING);
             deleteDynamicSignBtn = getButton(yCursor, "Delete a dynamic Sign", deleteDynamicSignBtn_eventClick);
 
-            this.height = addDynamicSignBtn.relativePosition.y + addDynamicSignBtn.height + PADDING * 2;
+            this.height = deleteDynamicSignBtn.relativePosition.y + deleteDynamicSignBtn.height + PADDING * 2;
 
             m_namingPanelObject = new GameObject("RouteNamePanel");
             m_namingPanel = m_namingPanelObject.AddComponent<RouteNamePanel>();
@@ -71,19 +70,12 @@ namespace MarkARoute.UI
             m_addSignPanel.transform.parent = uiView.transform;
             m_addSignPanel.Hide();
 
-            m_deleteSignPanelObject = new GameObject("DeleteSignPanel");
-            m_deleteSignPanel = m_deleteSignPanelObject.AddComponent<DeleteSignPanel>();
-            m_deleteSignPanel.transform.parent = uiView.transform;
-            m_deleteSignPanel.Hide();
 
             EventBusManager.Instance().Subscribe("forceupdateroutes", m_usedRoutesPanel);
             EventBusManager.Instance().Subscribe("closeUsedNamePanel", m_usedRoutesPanel);
             EventBusManager.Instance().Subscribe("closeAll", m_usedRoutesPanel);
             EventBusManager.Instance().Subscribe("closeAll", m_namingPanel);
             EventBusManager.Instance().Subscribe("closeAll", m_addSignPanel);
-            EventBusManager.Instance().Subscribe("closeAll", m_deleteSignPanel);
-            EventBusManager.Instance().Subscribe("deleteSign", m_deleteSignPanel);
-            EventBusManager.Instance().Subscribe("forceUpdateSigns", m_deleteSignPanel);
             EventBusManager.Instance().Subscribe("updateroutepaneltext", m_addSignPanel);
             EventBusManager.Instance().Subscribe("updateroutepaneltext", m_namingPanel);
 

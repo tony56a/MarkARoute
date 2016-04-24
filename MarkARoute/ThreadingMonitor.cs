@@ -28,7 +28,8 @@ namespace MarkARoute
                     RouteManager.Instance().DelRoadRoute(segment);
                 }
             }
-
+            buffer = null;
+            segments = null;
             base.OnAfterSimulationTick();
         }
     }

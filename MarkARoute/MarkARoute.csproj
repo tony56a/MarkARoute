@@ -68,8 +68,6 @@
     <Compile Include="Tools\SignPlacementTool.cs" />
     <Compile Include="Tools\StaticSignPlacementTool.cs" />
     <Compile Include="UI\AddSignPanel.cs" />
-    <Compile Include="UI\DeleteSignPanel.cs" />
-    <Compile Include="UI\DeleteSignRowItem.cs" />
     <Compile Include="UI\MainPanel.cs" />
     <Compile Include="UI\ModPanel.cs" />
     <Compile Include="UI\RouteNamePanel.cs" />

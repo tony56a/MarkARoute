@@ -71,6 +71,8 @@ namespace MarkARoute
         {
             bool spriteSuccess = true;
             //TODO: Replace with a loader function( JSON mapping available )
+            DynamicSignConfig.LoadVmsMsgList();
+
             RouteShieldConfig.LoadRouteShieldInfo();
             string[] files = Directory.GetFiles(FileUtils.GetModPath()+ "/Icons");
             foreach ( string file in files)

@@ -23,8 +23,7 @@ namespace MarkARoute.Utils
             { "CN",new RouteShieldInfo(-0.2f, 0f, 0.6f, Color.white, "CN") },
             { "NL",new RouteShieldInfo(0f, 0f, 0.7f, Color.white, "NL") },
             { "TO",new RouteShieldInfo(0f, 0f, 0.5f, Color.black, "TO") },
-
-
+            
         };
 
         public Dictionary<string, RouteShieldInfo> routeShieldDictionary;
@@ -50,18 +49,6 @@ namespace MarkARoute.Utils
             }
 
             return instance;
-        }
-
-        public static void SetInstance(RouteShieldConfig manager)
-        {
-            if (manager != null)
-            {
-                instance = manager;
-            }
-            else
-            {
-                LoggerUtils.LogError("Tried to set RouteShieldInstance instance to a null variable!");
-            }
         }
 
         /// <summary>

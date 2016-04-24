@@ -36,26 +36,26 @@ namespace MarkARoute.Tools
         {
             if (m_toolController != null && !m_toolController.IsInsideUI && Cursor.visible)
             {
-                ushort segmentId;
+                DynamicSignContainer dynamicContainer;
                 SignContainer container;
                 Ray currentPosition = Camera.main.ScreenPointToRay(Input.mousePosition);
 
                 if( isDynamic)
                 {
-                    if (RaycastDynamicSign(currentPosition, out segmentId))
+                    if (RaycastDynamicSign(currentPosition, out dynamicContainer))
                     {
-                        if (segmentId != 0)
+                        if (dynamicContainer != null)
                         {
                             if (Event.current.type == EventType.MouseDown /*&& Event.current.button == (int)UIMouseButton.Left*/)
                             {
                                 //unset tool
                                 ShowToolInfo(false, null, new Vector3());
-                                GameObject.Destroy(RouteManager.Instance().m_dynamicSignDict[segmentId].m_signObj);
-                                RouteManager.Instance().m_dynamicSignDict.Remove(segmentId);
+                                GameObject.Destroy(dynamicContainer.m_signObj);
+                                RouteManager.Instance().m_dynamicSignList.Remove(dynamicContainer);
                             }
                             else
                             {
-                                ShowToolInfo(true, "Delete this sign", RouteManager.Instance().m_dynamicSignDict[segmentId].pos);
+                                ShowToolInfo(true, "Delete this sign", dynamicContainer.pos);
                             }
 
                         }
@@ -92,23 +92,23 @@ namespace MarkARoute.Tools
             }
         }
 
-        bool RaycastDynamicSign(Ray currentPosition, out ushort containerKey)
+        bool RaycastDynamicSign(Ray currentPosition, out DynamicSignContainer returnValue)
         {
             Vector3 origin = currentPosition.origin;
             Vector3 normalized = currentPosition.direction.normalized;
             Vector3 _b = currentPosition.origin + normalized * Camera.main.farClipPlane;
             Segment3 ray = new Segment3(origin, _b);
 
-            foreach (DynamicSignContainer container in RouteManager.Instance().m_dynamicSignDict.Values)
+            foreach (DynamicSignContainer container in RouteManager.Instance().m_dynamicSignList)
             {
                 if (ray.DistanceSqr(container.pos) < 800)
                 {
-                    containerKey = container.m_segment;
+                    returnValue = container;
                     return true;
                 }
             }
 
-            containerKey = 0;
+            returnValue = null;
             return false;
         }
 
