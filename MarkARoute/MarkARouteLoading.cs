@@ -61,6 +61,7 @@ namespace MarkARoute
         {
             // First disable dynamic sign updates
             RenderingManager.instance.disableTimer();
+            DynamicSignConfig.SaveVmsMsgList();
             MarkARouteOptions.mInGame = false;
         }
 

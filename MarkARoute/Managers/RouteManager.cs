@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MarkARoute.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -116,9 +117,13 @@ namespace MarkARoute.Managers
             m_dynamicSignList.Add(signContainer);
         }
 
-        public void SetSign(Vector3 position, float angle, string routePrefix, string route, string destination)
+        public void SetSign(Vector3 position, float angle, string routePrefix, string route, string destination, string signType)
         {
             SignContainer signContainer = new SignContainer(position, angle, routePrefix, route, destination);
+            signContainer.m_exitNum = signType;
+            string signPropType = signContainer.m_exitNum == null ? "hwysign" : signContainer.m_exitNum;
+            SignPropInfo config = SignPropConfig.signPropInfoDict[signPropType];
+            int numSignObjs = config.isDoubleGantry ? 2 : 1;
 
             if (routePrefix != null)
             {
@@ -136,28 +141,28 @@ namespace MarkARoute.Managers
             signContainer.m_signObj = new GameObject(position + "sign");
             signContainer.m_signObj.AddComponent<MeshRenderer>();
             signContainer.m_sign = signContainer.m_signObj.AddComponent<MeshFilter>();
-            signContainer.m_destinationMeshObject = new GameObject(position + "destText");
-            signContainer.m_destinationMesh = signContainer.m_destinationMeshObject.AddComponent<TextMesh>();
 
+            signContainer.m_destinationMeshObject = new GameObject[numSignObjs];
+            signContainer.m_destinationMesh = new TextMesh[numSignObjs];
 
             //Todo: move the route info back to the renderingManager( or move the rendering position here?? )
             signContainer.m_sign.transform.position = position;
             signContainer.m_sign.transform.Rotate(0, -1 * Mathf.Rad2Deg * signContainer.angle, 0);
 
-            signContainer.m_destinationMesh.transform.position = position;
-            signContainer.m_destinationMesh.transform.parent = signContainer.m_sign.transform;
+            for ( int i =0; i< numSignObjs; i++)
+            {
+                signContainer.m_destinationMeshObject[i] = new GameObject(position + i.ToString() + "destText");
+                signContainer.m_destinationMesh[i] = signContainer.m_destinationMeshObject[i].AddComponent<TextMesh>();
+                
+                signContainer.m_destinationMesh[i].transform.position = position;
+                signContainer.m_destinationMesh[i].transform.parent = signContainer.m_sign.transform;
 
-            signContainer.m_destinationMesh.transform.position = position;
-            signContainer.m_destinationMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270, 0);
-            signContainer.m_destinationMesh.transform.localPosition += new Vector3(0.2f, 6f, -4.7f);
-
+                signContainer.m_destinationMesh[i].transform.position = position;
+                signContainer.m_destinationMesh[i].transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270, 0);
+            }
+         
             if (routePrefix != null)
             {
-                signContainer.m_numMesh.GetComponent<MeshRenderer>().sortingLayerName = signContainer.m_sign.GetComponent<MeshRenderer>().sortingLayerName;
-                signContainer.m_numMesh.GetComponent<MeshRenderer>().sortingLayerName = signContainer.m_sign.GetComponent<MeshRenderer>().sortingLayerName;
-                signContainer.m_numMesh.GetComponent<MeshRenderer>().sortingLayerID = signContainer.m_sign.GetComponent<MeshRenderer>().sortingLayerID;
-                signContainer.m_numMesh.GetComponent<MeshRenderer>().sortingLayerID = signContainer.m_sign.GetComponent<MeshRenderer>().sortingLayerID;
-
 
                 signContainer.m_shieldMesh.transform.position = position;
 
@@ -286,7 +291,7 @@ namespace MarkARoute.Managers
             {
                 foreach (SignContainer sign in signContainers)
                 {
-                    SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_destination);
+                    SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_destination, sign.m_exitNum);
                 }
             }
         }
@@ -367,9 +372,9 @@ namespace MarkARoute.Managers
         public TextMesh m_numMesh;
 
         [NonSerialized]
-        public GameObject m_destinationMeshObject;
+        public GameObject[] m_destinationMeshObject;
         [NonSerialized]
-        public TextMesh m_destinationMesh;
+        public TextMesh[] m_destinationMesh;
 
         public SignContainer(Vector3 pos, float angle, string routePrefix, string route, string destination)
         {

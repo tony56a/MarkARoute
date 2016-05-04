@@ -37,7 +37,6 @@ namespace MarkARoute.Tools
         public string routeStr;
         public string destination;
 
-        
         protected abstract override void Awake();
         protected abstract void HandleSignPlaced();
 
@@ -184,8 +183,6 @@ namespace MarkARoute.Tools
             this.m_toolController.SetBrush((Texture2D)null, Vector3.zero, 1f);
             this.m_cachedPosition = this.m_mousePosition;
             this.m_cachedAngle = this.m_angle * (float)(Math.PI / 180.0);
-
-
         }
 
         public static void DispatchPlacementEffect(Vector3 pos, bool bulldozing)
@@ -200,35 +197,38 @@ namespace MarkARoute.Tools
 
         public override void SimulationStep()
         {
-                
-                ToolBase.RaycastInput input = new ToolBase.RaycastInput(this.m_mouseRay, this.m_mouseRayLength);
-                if ( (Singleton<ToolManager>.instance.m_properties.m_mode & ItemClass.Availability.AssetEditor) != ItemClass.Availability.None)
-                    input.m_currentEditObject = true;
-                ulong[] collidingSegments;
-                ulong[] collidingBuildings;
-                this.m_toolController.BeginColliding(out collidingSegments, out collidingBuildings);
-                try
-                {
-                    ToolBase.RaycastOutput output;
-                    if (this.m_mouseRayValid && ToolBase.RayCast(input, out output))
-                    {
 
-                            if (!output.m_currentEditObject)
-                                output.m_hitPos.y = Singleton<TerrainManager>.instance.SampleDetailHeight(output.m_hitPos);
-                            Randomizer r = this.m_randomizer;
-                            ushort id = Singleton<PropManager>.instance.m_props.NextFreeItem(ref r);
-                            this.m_mousePosition = output.m_hitPos;
-                            this.m_placementErrors = ToolErrors.None;
-                            this.m_fixedHeight = output.m_currentEditObject;
-                        
-                    }
-                    else
-                        this.m_placementErrors = ToolBase.ToolErrors.RaycastFailed;
-                }
-                finally
+            ToolBase.RaycastInput input = new ToolBase.RaycastInput(this.m_mouseRay, this.m_mouseRayLength);
+            input.m_ignoreSegmentFlags = NetSegment.Flags.None;
+            input.m_ignoreNodeFlags = NetNode.Flags.None;
+            if ((Singleton<ToolManager>.instance.m_properties.m_mode & ItemClass.Availability.AssetEditor) != ItemClass.Availability.None)
+                input.m_currentEditObject = true;
+            ulong[] collidingSegments;
+            ulong[] collidingBuildings;
+            this.m_toolController.BeginColliding(out collidingSegments, out collidingBuildings);
+            try
+            {
+                ToolBase.RaycastOutput output;
+                if (this.m_mouseRayValid && ToolBase.RayCast(input, out output))
                 {
-                    this.m_toolController.EndColliding();
+
+                    //if (!output.m_currentEditObject)
+                    float terrainHeight = TerrainManager.instance.SampleDetailHeight(output.m_hitPos);
+                    output.m_hitPos.y = output.m_hitPos.y > terrainHeight ? output.m_hitPos.y : terrainHeight;
+                    Randomizer r = this.m_randomizer;
+                    ushort id = Singleton<PropManager>.instance.m_props.NextFreeItem(ref r);
+                    this.m_mousePosition = output.m_hitPos;
+                    this.m_placementErrors = ToolErrors.None;
+                    this.m_fixedHeight = output.m_currentEditObject;
+
                 }
+                else
+                    this.m_placementErrors = ToolBase.ToolErrors.RaycastFailed;
+            }
+            finally
+            {
+                this.m_toolController.EndColliding();
+            }
         }
 
         public override ToolBase.ToolErrors GetErrors()

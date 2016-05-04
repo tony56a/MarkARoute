@@ -13,10 +13,6 @@ namespace MarkARoute.Managers
 {
     class RenderingManager : SimulationManagerBase<RenderingManager, DistrictProperties>, IRenderableManager, ISimulationManager
     {
-        private Material m_nameMaterial = null;
-        private Material m_iconMaterial = null;
-        private Font m_customFont = null;
-        private Font m_dynamicCustomFont = null;
 
         private int m_lastCount = 0;
         private bool textHidden = false;
@@ -25,12 +21,17 @@ namespace MarkARoute.Managers
         public bool m_alwaysShowText = false;
         public bool m_registered = false;
         public bool m_routeEnabled = true;
-        public PropInfo m_signPropInfo = null;
-        public PropInfo m_dynamicSignPropInfo = null;
+
+        // List of fonts that we want to load for the mod
+        public readonly List<string> m_desiredFonts = new List<string> { "Highway Gothic", "Electronic Highway Sign", "Transport" };
+
+        public Dictionary<string, PropInfo> m_signPropDict;
+        public Dictionary<string, Font> m_fontDict;
 
         Timer messageUpdateTimer = new Timer();
         public volatile bool m_updateDynamicSignFlag = false;
         System.Random messageRandom = new System.Random();
+
         public void initTimer()
         {
             messageUpdateTimer.Interval = 5000;
@@ -47,34 +48,55 @@ namespace MarkARoute.Managers
           
         }
 
+        public bool LoadPropMeshes()
+        {
+            m_fontDict = new Dictionary<string, Font>();
+            m_signPropDict = new Dictionary<string, PropInfo>();
+            List<string> meshKeys = new List<string>(SignPropConfig.signPropInfoDict.Keys);
+
+            // Bit of a placeholder hack, since we don't support multiple type of VMS models as of yet
+            meshKeys.Add("electronic_sign_gantry");
+
+            for (uint i = 0; i < PrefabCollection<PropInfo>.LoadedCount(); ++i)
+            {
+                for (int j = 0; j < meshKeys.Count; j++)
+                {
+                    if (PrefabCollection<PropInfo>.GetLoaded(i).name.ToLower().Contains(meshKeys[j]))
+                    {
+                        m_signPropDict[meshKeys[j]] = PrefabCollection<PropInfo>.GetLoaded(i);
+                        meshKeys.RemoveAt(j);
+                    }
+                }
+            }
+
+            foreach( string fontName in m_desiredFonts)
+            {
+                Font font = Font.CreateDynamicFontFromOSFont(fontName, DistrictManager.instance.m_properties.m_areaNameFont.baseFont.fontSize);
+                if ( font != null )
+                {
+                    m_fontDict[fontName] = font;
+                }
+            }
+
+            return meshKeys.Count == 0;
+        }
+
         protected override void Awake()
         {
             base.Awake();
 
             LoggerUtils.Log("Initialising RoadRenderingManager");
 
-            DistrictManager districtManager = Singleton<DistrictManager>.instance;
-
-            this.m_nameMaterial = new Material(districtManager.m_properties.m_areaNameShader);
-            this.m_nameMaterial.CopyPropertiesFromMaterial(districtManager.m_properties.m_areaNameFont.material);
-
-            this.m_iconMaterial = new Material(districtManager.m_properties.m_areaIconShader);
-            this.m_iconMaterial.CopyPropertiesFromMaterial(districtManager.m_properties.m_areaIconAtlas.material);
-
-            m_customFont = Font.CreateDynamicFontFromOSFont("Highway Gothic", districtManager.m_properties.m_areaNameFont.baseFont.fontSize);
-            m_dynamicCustomFont = Font.CreateDynamicFontFromOSFont("Electronic Highway Sign", districtManager.m_properties.m_areaNameFont.baseFont.fontSize);
-
-            for (uint i = 0; i < PrefabCollection<PropInfo>.LoadedCount(); ++i)
+            if (!LoadPropMeshes())
             {
-                if (PrefabCollection<PropInfo>.GetLoaded(i).name.ToLower().Contains("hwysign"))
-                {
-                    this.m_signPropInfo = PrefabCollection<PropInfo>.GetLoaded(i);
-                }
-                else if (PrefabCollection<PropInfo>.GetLoaded(i).name.ToLower().Contains("electronic_sign_gantry"))
-                {
-                    this.m_dynamicSignPropInfo = PrefabCollection<PropInfo>.GetLoaded(i);
-                }
+                LoggerUtils.LogError("Failed to load some props!");
             }
+            else
+            {
+                LoggerUtils.Log("Props loaded!");
+
+            }
+
             //Only start dynamic signs after everything's loaded
             RenderingManager.instance.initTimer();
         }
@@ -143,13 +165,14 @@ namespace MarkARoute.Managers
                 m_updateDynamicSignFlag = false;
                 float avg;
                 float lowTrafficMsgChance;
+                String msgText;
                 foreach (DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignList)
                 {
                     avg = (float)sign.m_trafficDensity;
                     avg -= sign.m_trafficDensity / 3;
                     avg += netManager.m_segments.m_buffer[sign.m_segment].m_trafficDensity / 3;
                     sign.m_trafficDensity = avg;
-                    String msgText = (sign.m_route == null ? "Traffic" : (sign.m_routePrefix + '-' + sign.m_route)) +
+                    msgText = (sign.m_route == null ? "Traffic" : (sign.m_routePrefix + '-' + sign.m_route)) +
                     String.Format(" moving {0}", sign.m_trafficDensity > 65 ? "slowly" : "well" );
 
                     if( sign.m_trafficDensity < 35)
@@ -185,7 +208,6 @@ namespace MarkARoute.Managers
                 foreach (RouteContainer route in RouteManager.Instance().m_routeDict.Values)
                 {
 
-
                     if (route.m_segmentId != 0)
                     {
                         string routeStr = route.m_route;
@@ -220,7 +242,8 @@ namespace MarkARoute.Managers
                                 route.m_shieldObject.GetComponent<Renderer>().sortingOrder = 1000;
 
                                 route.m_numMesh.anchor = TextAnchor.MiddleCenter;
-                                route.m_numMesh.font = m_customFont == null ? districtManager.m_properties.m_areaNameFont.baseFont : m_customFont;
+
+                                route.m_numMesh.font = m_fontDict.ContainsKey("Highway Gothic") ? m_fontDict["Highway Gothic"] : districtManager.m_properties.m_areaNameFont.baseFont ;
                                 route.m_numMesh.GetComponent<Renderer>().material = route.m_numMesh.font.material;
                                 //TODO: Tie the font size to the font size option
                                 route.m_numMesh.fontSize = 50;
@@ -250,10 +273,13 @@ namespace MarkARoute.Managers
                 {
 
                     Vector3 position = new Vector3(sign.x, sign.y, sign.z);
+                    string signPropType = ( sign.m_exitNum == null || !m_signPropDict.ContainsKey(sign.m_exitNum) ) ? "hwysign" : sign.m_exitNum;
+                    SignPropInfo signPropInfo = SignPropConfig.signPropInfoDict[signPropType];
+                    int numSignProps = signPropInfo.isDoubleGantry ? 2 : 1;
 
-                    sign.m_sign.GetComponent<Renderer>().material = this.m_signPropInfo.m_material;
+                    sign.m_sign.GetComponent<Renderer>().material = m_signPropDict[signPropType].m_material;
                     //TODO: Make mesh size dependent on text size
-                    sign.m_sign.mesh = this.m_signPropInfo.m_mesh;
+                    sign.m_sign.mesh = m_signPropDict[signPropType].m_mesh;
                     sign.m_sign.transform.position = position;
 
                     if ( sign.m_routePrefix != null)
@@ -268,11 +294,11 @@ namespace MarkARoute.Managers
 
                         //TODO: Bind the elevation of the mesh to the text z offset
                         sign.m_shieldMesh.transform.position += (Vector3.up * (0.5f));
-                        sign.m_shieldMesh.transform.localScale = new Vector3(0.18f, 0.18f, 0.18f);
+                        sign.m_shieldMesh.transform.localScale = signPropInfo.shieldScale;
                         sign.m_shieldObject.GetComponent<Renderer>().sortingOrder = 1000;
 
                         sign.m_numMesh.anchor = TextAnchor.MiddleCenter;
-                        sign.m_numMesh.font = m_customFont == null ? districtManager.m_properties.m_areaNameFont.baseFont : m_customFont;
+                        sign.m_numMesh.font = m_fontDict.ContainsKey("Highway Gothic") ? m_fontDict["Highway Gothic"] : districtManager.m_properties.m_areaNameFont.baseFont;
                         sign.m_numMesh.GetComponent<Renderer>().material = sign.m_numMesh.font.material;
 
                         //TODO: Tie the font size to the font size option
@@ -293,42 +319,48 @@ namespace MarkARoute.Managers
 
                         sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
 
-                        sign.m_shieldMesh.transform.localPosition = new Vector3(0.2f, 7.2f, -3.8f);
+                        sign.m_shieldMesh.transform.localPosition = signPropInfo.shieldOffset;
+                    }
+
+
+                    string[] destinationStrings = sign.m_destination.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+                    for(int i =0; i<numSignProps; i++)
+                    {
+                        sign.m_destinationMesh[i].anchor = TextAnchor.MiddleCenter;
+                        sign.m_destinationMesh[i].font = m_fontDict.ContainsKey(signPropInfo.fontType) ? m_fontDict[signPropInfo.fontType] : districtManager.m_properties.m_areaNameFont.baseFont;
+                        sign.m_destinationMesh[i].font.material.SetColor("Text Color", Color.white);
+                        sign.m_destinationMesh[i].font.material.shader = ShaderUtils.m_shaderStore["Font"];
+
+                        sign.m_destinationMesh[i].GetComponent<Renderer>().material = sign.m_destinationMesh[i].font.material;
+                        //TODO: Tie the font size to the font size option
+                        sign.m_destinationMesh[i].fontSize = 50;
+                        sign.m_destinationMesh[i].transform.position = position;
+                        sign.m_destinationMesh[i].transform.parent = sign.m_sign.transform;
+
+                        sign.m_destinationMesh[i].transform.position = position;
+                        //Just a hack, to make sure the text actually shows up above the shield
+                        sign.m_destinationMesh[i].offsetZ = 0.001f;
+                        //TODO: Definitely get a map of the texture to the required text offsets 
+                        //TODO: Figure out a better ratio for route markers
+                        sign.m_destinationMesh[i].transform.localScale = signPropInfo.textScale;
+                        sign.m_destinationMesh[i].text = signPropInfo.isDoubleGantry ? destinationStrings[i] : sign.m_destination;
+
+                        sign.m_destinationMesh[i].transform.localPosition = sign.m_routePrefix == null ? signPropInfo.textOffsetNoSign[i] : signPropInfo.textOffsetSign[i];
                     }
                    
-                    sign.m_destinationMesh.anchor = TextAnchor.MiddleCenter;
-                    sign.m_destinationMesh.font = m_customFont == null ? districtManager.m_properties.m_areaNameFont.baseFont : m_customFont;
-                    sign.m_destinationMesh.font.material.SetColor("Text Color", Color.white);
-                    sign.m_destinationMesh.font.material.shader = ShaderUtils.m_shaderStore["Font"];
-
-                    sign.m_destinationMesh.GetComponent<Renderer>().material = sign.m_destinationMesh.font.material;
-                    //TODO: Tie the font size to the font size option
-                    sign.m_destinationMesh.fontSize = 50;
-                    sign.m_destinationMesh.transform.position = position;
-                    sign.m_destinationMesh.transform.parent = sign.m_sign.transform;
-
-                    sign.m_destinationMesh.transform.position = position;
-                    //Just a hack, to make sure the text actually shows up above the shield
-                    sign.m_destinationMesh.offsetZ = 0.001f;
-                    //TODO: Definitely get a map of the texture to the required text offsets 
-                    //TODO: Figure out a better ratio for route markers
-                    sign.m_destinationMesh.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-                    sign.m_destinationMesh.text = sign.m_destination;
-
-                    sign.m_destinationMesh.transform.localPosition = sign.m_routePrefix == null ? new Vector3(0.2f, 6.5f, -4.7f) : new Vector3(0.2f, 5.8f, -4.7f);
-                    
                 }
 
                 foreach( DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignList) {
                     Vector3 position = new Vector3(sign.x, sign.y, sign.z);
 
-                    sign.m_sign.GetComponent<Renderer>().material = this.m_dynamicSignPropInfo.m_material;
+                    sign.m_sign.GetComponent<Renderer>().material = m_signPropDict["electronic_sign_gantry"].m_material;
                     //TODO: Make mesh size dependent on text size
-                    sign.m_sign.mesh = this.m_dynamicSignPropInfo.m_mesh;
+                    sign.m_sign.mesh = m_signPropDict["electronic_sign_gantry"].m_mesh;
                     sign.m_sign.transform.position = position;
 
                     sign.m_messageTextMesh.anchor = TextAnchor.MiddleLeft;
-                    sign.m_messageTextMesh.font = m_dynamicCustomFont == null ? districtManager.m_properties.m_areaNameFont.baseFont : m_dynamicCustomFont;
+                    sign.m_messageTextMesh.font = m_fontDict.ContainsKey("Electronic Highway Sign") ? m_fontDict["Electronic Highway Sign"] : districtManager.m_properties.m_areaNameFont.baseFont;
                     sign.m_messageTextMesh.font.material.shader = ShaderUtils.m_shaderStore["Font"];
                     sign.m_messageTextMesh.color = (new Color(1, 0.77f, 0.56f, 1f));
                     sign.m_messageTextMesh.font.material.SetColor("Text Color", new Color(1, 0.77f, 0.56f, 1f));

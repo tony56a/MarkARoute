@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using MarkARoute.Tools;
+using System.Collections.ObjectModel;
 
 namespace MarkARoute.UI
 {
@@ -21,6 +22,9 @@ namespace MarkARoute.UI
 
         private UITextField[] m_destinationField = new UITextField[2];
         private UILabel m_destinationLabel;
+
+        private UILabel m_propTypeLabel;
+        private UIDropDown m_propTypeDropDown;
 
         public StaticSignPlacementTool mSignPlacementTool;
 
@@ -98,7 +102,7 @@ namespace MarkARoute.UI
             m_destinationField[0].width = (this.width - m_UIPadding.left - 2 * m_UIPadding.right);
             m_destinationField[0].processMarkup = false;
             m_destinationField[0].textColor = Color.white;
-            m_destinationField[0].maxLength = 12;
+            m_destinationField[0].maxLength = 14;
 
             m_destinationField[1] = UIUtils.CreateTextField(this);
             m_destinationField[1].relativePosition = new Vector3(m_UIPadding.left, m_destinationField[0].relativePosition.y + m_destinationField[0].height + m_UIPadding.bottom);
@@ -106,12 +110,30 @@ namespace MarkARoute.UI
             m_destinationField[1].width = (this.width - m_UIPadding.left - 2 * m_UIPadding.right);
             m_destinationField[1].processMarkup = false;
             m_destinationField[1].textColor = Color.white;
-            m_destinationField[1].maxLength = 12;
+            m_destinationField[1].maxLength = 14;
+
+            m_propTypeLabel = this.AddUIComponent<UILabel>();
+            m_propTypeLabel.textScale = 1f;
+            m_propTypeLabel.size = new Vector3(m_UIPadding.left, m_panelTitle.height + m_UIPadding.bottom);
+            m_propTypeLabel.textColor = new Color32(180, 180, 180, 255);
+            m_propTypeLabel.relativePosition = new Vector3(m_UIPadding.left, m_destinationField[1].relativePosition.y + m_destinationField[1].height + m_UIPadding.bottom);
+            m_propTypeLabel.textAlignment = UIHorizontalAlignment.Left;
+            m_propTypeLabel.text = "Sign prop type";
+
+            m_propTypeDropDown = UIUtils.CreateDropDown(this, new Vector2(((this.width - m_UIPadding.left - 2 * m_UIPadding.right)), 25));
+            //TODO: Replace with Random namer values
+            var keys = RenderingManager.instance.m_signPropDict.Keys;
+            foreach (String signPropName in RenderingManager.instance.m_signPropDict.Keys.Where(key => SignPropConfig.signPropInfoDict.ContainsKey(key)) )
+            {
+                m_propTypeDropDown.AddItem(signPropName);
+            }
+            m_propTypeDropDown.selectedIndex = 0;
+            m_propTypeDropDown.relativePosition = new Vector3(m_UIPadding.left, m_propTypeLabel.relativePosition.y + m_propTypeLabel.height + m_UIPadding.bottom);
 
             UIButton nameRoadButton = UIUtils.CreateButton(this);
             nameRoadButton.text = "Set";
             nameRoadButton.size = new Vector2(60, 30);
-            nameRoadButton.relativePosition = new Vector3(this.width - nameRoadButton.width - m_UIPadding.right, m_destinationField[1].relativePosition.y + m_destinationField[1].height + m_UIPadding.bottom);
+            nameRoadButton.relativePosition = new Vector3(this.width - nameRoadButton.width - m_UIPadding.right, m_propTypeDropDown.relativePosition.y + m_propTypeDropDown.height + m_UIPadding.bottom);
             nameRoadButton.eventClicked += NameRoadButton_eventClicked;
             nameRoadButton.tooltip = "Create the label";
 
@@ -147,6 +169,7 @@ namespace MarkARoute.UI
                 mSignPlacementTool.routePrefix = m_routeTypeDropdown.selectedValue;
             }
             mSignPlacementTool.destination = m_destinationField[0].text+'\n'+ m_destinationField[1].text;
+            mSignPlacementTool.SetPropInfo(m_propTypeDropDown.selectedValue);
             ToolsModifierControl.toolController.CurrentTool = mSignPlacementTool;
             ToolsModifierControl.SetTool<StaticSignPlacementTool>();
             EventBusManager.Instance().Publish("closeAll", null);

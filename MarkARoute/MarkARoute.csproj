@@ -82,6 +82,7 @@
     <Compile Include="Utils\MeshUtils.cs" />
     <Compile Include="Utils\RouteShieldConfig.cs" />
     <Compile Include="Utils\ShaderUtils.cs" />
+    <Compile Include="Utils\SignPropConfig.cs" />
     <Compile Include="Utils\SpriteUtils.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -8,6 +8,7 @@ namespace MarkARoute.Utils
 {
     class FileUtils
     {
+
         private static readonly string MODNAME = "MarkARoute";
         private const ulong m_workshopId = 649674529ul;
         private static string m_savedModPath = null;

@@ -14,13 +14,7 @@ namespace MarkARoute.Tools
         protected override void Awake()
         {
             base.BaseAwake();
-            for (uint i = 0; i < PrefabCollection<PropInfo>.LoadedCount(); ++i)
-            {
-                if (PrefabCollection<PropInfo>.GetLoaded(i).name.ToLower().Contains("electronic_sign_gantry"))
-                {
-                    base.m_propInfo = PrefabCollection<PropInfo>.GetLoaded(i);
-                }
-            }
+            base.m_propInfo = RenderingManager.instance.m_signPropDict["electronic_sign_gantry"];
         }
 
         protected override void HandleSignPlaced()

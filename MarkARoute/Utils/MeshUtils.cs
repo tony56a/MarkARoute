@@ -8,6 +8,7 @@ namespace MarkARoute.Utils
 {
     class MeshUtils
     {
+
         /// <summary>
         /// Creates a mesh that approxmiately correlates to the specified size
         /// </summary>

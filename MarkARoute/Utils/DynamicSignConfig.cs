@@ -1,15 +1,16 @@
-﻿using System;
+﻿using ColossalFramework.HTTP;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml.Serialization;
 
 namespace MarkARoute.Utils
 {
     class DynamicSignConfig
     {
-        private static readonly string FILE_NAME = "MarkARouteVmsStrings.xml";
+        private static readonly string FILE_NAME = "MarkARouteVmsStrings.json";
         private static readonly string ELEMENT_NAME = "MarkARouteVmsItems";
 
         private static readonly List<string> fallbackMsgStrings = new List<string>{ "Eat your vegetables",
@@ -40,15 +41,15 @@ namespace MarkARoute.Utils
         {
             if (File.Exists(FILE_NAME))
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(string[]));
                 StreamReader reader = new StreamReader(FILE_NAME);
 
-                string[] vmsMsgStrings = ((string[])serializer.Deserialize(reader));
+                ArrayList vmsMsgStrings = JSON.JsonDecode(reader.ReadToEnd()) as ArrayList;
+                
                 reader.Close();
 
                 if (vmsMsgStrings != null)
                 {
-                    Instance().msgStrings = new List<string>(vmsMsgStrings);
+                    Instance().msgStrings = vmsMsgStrings.Cast<string>().ToList();
 
                     LoggerUtils.Log("Loaded route VMS message file.");
                 }
@@ -70,10 +71,9 @@ namespace MarkARoute.Utils
         /// </summary>
         public static void SaveVmsMsgList()
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(string[]));
             StreamWriter writer = new StreamWriter(FILE_NAME);
-
-            serializer.Serialize(writer, instance.msgStrings);
+            ArrayList strs = new ArrayList(Instance().msgStrings);
+            writer.WriteLine(JSON.JsonEncode(strs));
             writer.Close();
 
             LoggerUtils.Log("Saved route shield info file.");

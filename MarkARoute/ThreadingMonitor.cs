@@ -9,17 +9,15 @@ namespace MarkARoute
 {
     public class ThreadingMonitor : ThreadingExtensionBase
     {
-        private NetManager mNetManager;
 
         public override void OnCreated(IThreading threading)
         {
-            mNetManager = NetManager.instance;
             base.OnCreated(threading);
         }
 
         public override void OnAfterSimulationTick()
         {
-            NetSegment[] buffer = mNetManager.m_segments.m_buffer;
+            NetSegment[] buffer = NetManager.instance.m_segments.m_buffer;
             List<ushort> segments = new List<ushort>(RouteManager.Instance().m_routeDict.Keys);
             foreach (ushort segment in segments)
             {
