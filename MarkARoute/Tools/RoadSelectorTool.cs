@@ -17,6 +17,8 @@ namespace MarkARoute.Tools
         public bool isDynamic = false;
         public DynamicSignPlacementTool m_dynamicSignPlacementTool = null;
 
+        public AngleDialog angleDialog;
+
         protected override void Awake()
         {
             LoggerUtils.Log("Tool awake");
@@ -82,9 +84,11 @@ namespace MarkARoute.Tools
                                         m_dynamicSignPlacementTool.segmentId = netSegmentId;
                                         m_dynamicSignPlacementTool.routeStr = RouteManager.Instance().GetRouteStr(netSegmentId);
                                         m_dynamicSignPlacementTool.routePrefix = RouteManager.Instance().GetRouteType(netSegmentId);
+                                        m_dynamicSignPlacementTool.angleDialog = angleDialog;
                                         ToolsModifierControl.toolController.CurrentTool = m_dynamicSignPlacementTool;
                                         ToolsModifierControl.SetTool<DynamicSignPlacementTool>();
                                         EventBusManager.Instance().Publish("closeAll", null);
+                                        angleDialog.Show();
                                     }
                                   
                                 }

@@ -158,7 +158,7 @@ namespace MarkARoute.Managers
                 signContainer.m_destinationMesh[i].transform.parent = signContainer.m_sign.transform;
 
                 signContainer.m_destinationMesh[i].transform.position = position;
-                signContainer.m_destinationMesh[i].transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270, 0);
+                signContainer.m_destinationMesh[i].transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270 + config.angleOffset, 0);
             }
          
             if (routePrefix != null)
@@ -174,7 +174,7 @@ namespace MarkARoute.Managers
                 signContainer.m_numMesh.transform.position = signContainer.m_shieldObject.GetComponent<Renderer>().bounds.center;
 
                 signContainer.m_shieldMesh.transform.parent = signContainer.m_sign.transform;
-                signContainer.m_shieldMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270, 0);
+                signContainer.m_shieldMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270 + config.angleOffset, 0);
 
                 signContainer.m_shieldMesh.transform.localPosition += new Vector3(0.2f, 6.6f, -5.6f);
 

@@ -26,6 +26,7 @@ namespace MarkARoute.UI
         private UILabel m_propTypeLabel;
         private UIDropDown m_propTypeDropDown;
 
+        public AngleDialog angleDialog;
         public StaticSignPlacementTool mSignPlacementTool;
 
         public override void Awake()
@@ -169,10 +170,12 @@ namespace MarkARoute.UI
                 mSignPlacementTool.routePrefix = m_routeTypeDropdown.selectedValue;
             }
             mSignPlacementTool.destination = m_destinationField[0].text+'\n'+ m_destinationField[1].text;
+            mSignPlacementTool.angleDialog = angleDialog;
             mSignPlacementTool.SetPropInfo(m_propTypeDropDown.selectedValue);
             ToolsModifierControl.toolController.CurrentTool = mSignPlacementTool;
             ToolsModifierControl.SetTool<StaticSignPlacementTool>();
             EventBusManager.Instance().Publish("closeAll", null);
+            angleDialog.Show();
         }
         public void onReceiveEvent(string eventName, object eventData)
         {

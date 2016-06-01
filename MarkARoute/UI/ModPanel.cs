@@ -30,10 +30,12 @@ namespace MarkARoute.UI
         private GameObject m_usedRoutesPanelObject;
         private GameObject m_addSignPanelObject;
         private GameObject m_deleteSignPanelObject;
+        private GameObject m_propAngleDialogObject;
 
         private AddSignPanel m_addSignPanel;
         private RouteNamePanel m_namingPanel;
         private UsedRoutesPanel m_usedRoutesPanel;
+        private AngleDialog angleDialog;
 
         public ModPanel()
         {
@@ -55,6 +57,11 @@ namespace MarkARoute.UI
 
             this.height = deleteDynamicSignBtn.relativePosition.y + deleteDynamicSignBtn.height + PADDING * 2;
 
+            m_propAngleDialogObject = new GameObject("AnglePanel");
+            angleDialog = m_propAngleDialogObject.AddComponent<AngleDialog>();
+            angleDialog.transform.parent = uiView.transform;
+            angleDialog.Hide();
+
             m_namingPanelObject = new GameObject("RouteNamePanel");
             m_namingPanel = m_namingPanelObject.AddComponent<RouteNamePanel>();
             m_namingPanel.transform.parent = uiView.transform;
@@ -68,16 +75,8 @@ namespace MarkARoute.UI
             m_addSignPanelObject = new GameObject("AddSignsPanel");
             m_addSignPanel = m_addSignPanelObject.AddComponent<AddSignPanel>();
             m_addSignPanel.transform.parent = uiView.transform;
+            m_addSignPanel.angleDialog = angleDialog;
             m_addSignPanel.Hide();
-
-
-            EventBusManager.Instance().Subscribe("forceupdateroutes", m_usedRoutesPanel);
-            EventBusManager.Instance().Subscribe("closeUsedNamePanel", m_usedRoutesPanel);
-            EventBusManager.Instance().Subscribe("closeAll", m_usedRoutesPanel);
-            EventBusManager.Instance().Subscribe("closeAll", m_namingPanel);
-            EventBusManager.Instance().Subscribe("closeAll", m_addSignPanel);
-            EventBusManager.Instance().Subscribe("updateroutepaneltext", m_addSignPanel);
-            EventBusManager.Instance().Subscribe("updateroutepaneltext", m_namingPanel);
 
             mDynamicSignPlacementTool = ToolsModifierControl.toolController.gameObject.AddComponent<DynamicSignPlacementTool>();
             mSignDeletionTool = ToolsModifierControl.toolController.gameObject.AddComponent<SignDeletionTool>();
@@ -89,6 +88,18 @@ namespace MarkARoute.UI
             mRoadSelectTool.m_namingPanel = m_namingPanel;
             mRoadSelectTool.m_usedRoutesPanel = m_usedRoutesPanel;
             mRoadSelectTool.m_dynamicSignPlacementTool = mDynamicSignPlacementTool;
+            mRoadSelectTool.angleDialog = angleDialog;
+
+            EventBusManager.Instance().Subscribe("forceupdateroutes", m_usedRoutesPanel);
+            EventBusManager.Instance().Subscribe("closeUsedNamePanel", m_usedRoutesPanel);
+            EventBusManager.Instance().Subscribe("closeAll", m_usedRoutesPanel);
+            EventBusManager.Instance().Subscribe("closeAll", m_namingPanel);
+            EventBusManager.Instance().Subscribe("closeAll", m_addSignPanel);
+            EventBusManager.Instance().Subscribe("updateroutepaneltext", m_addSignPanel);
+            EventBusManager.Instance().Subscribe("updateroutepaneltext", m_namingPanel);
+            EventBusManager.Instance().Subscribe("setAngle", mSignPlacementTool);
+            EventBusManager.Instance().Subscribe("setAngle", mDynamicSignPlacementTool);
+            EventBusManager.Instance().Subscribe("setAngle", angleDialog);
 
             ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
             ToolsModifierControl.SetTool<DefaultTool>();
@@ -142,6 +153,7 @@ namespace MarkARoute.UI
         private void addDynamicSignBtn_eventClick(UIComponent component, UIMouseEventParameter eventParam)
         {
             mRoadSelectTool.isDynamic = true;
+            mRoadSelectTool.angleDialog = angleDialog;
             if (ToolsModifierControl.toolController.CurrentTool != mRoadSelectTool)
             {
                 ToolsModifierControl.toolController.CurrentTool = mRoadSelectTool;

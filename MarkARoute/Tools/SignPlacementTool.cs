@@ -11,22 +11,15 @@ using UnityEngine;
 
 namespace MarkARoute.Tools
 {
-    abstract class SignPlacementTool : DefaultTool
+    abstract class SignPlacementTool : DefaultTool, IEventSubscriber
     {
-        public float m_brushSize = 200f;
-        public float m_strength = 0.1f;
         public float m_angle;
         public Texture2D m_brush;
         public CursorInfo m_buildCursor;
         protected PropInfo m_propInfo;
-        private Vector3 m_mousePosition;
-        private Ray m_mouseRay;
-        private float m_mouseRayLength;
         private bool m_mouseLeftDown;
         private bool m_mouseRightDown;
         private ToolBase.ToolErrors m_placementErrors;
-        private bool m_angleChanged;
-        private bool m_fixedHeight;
         private Randomizer m_randomizer;
 
         protected Vector3 m_cachedPosition;
@@ -36,6 +29,8 @@ namespace MarkARoute.Tools
         public string routePrefix;
         public string routeStr;
         public string destination;
+
+        public AngleDialog angleDialog;
 
         protected abstract override void Awake();
         protected abstract void HandleSignPlaced();
@@ -62,7 +57,6 @@ namespace MarkARoute.Tools
                     if (e.button != 1)
                         return;
                     this.m_mouseRightDown = true;
-                    this.m_angleChanged = false;
                 }
             }
             else
@@ -101,6 +95,10 @@ namespace MarkARoute.Tools
             this.m_mouseRightDown = false;
             this.m_placementErrors = ToolBase.ToolErrors.Pending;
             this.m_mouseRayValid = false;
+            if( this.angleDialog != null)
+            {
+                this.angleDialog.Hide();
+            }
         }
 
         public override void RenderGeometry(RenderManager.CameraInfo cameraInfo)
@@ -135,7 +133,7 @@ namespace MarkARoute.Tools
                 Color toolColor = this.GetToolColor(false, this.m_placementErrors != ToolBase.ToolErrors.None);
                 this.m_toolController.RenderColliding(cameraInfo, toolColor, toolColor, toolColor, toolColor, (ushort)0, (ushort)0);
                 Randomizer r = this.m_randomizer;
-                Randomizer randomizer = new Randomizer((int)Singleton<PropManager>.instance.m_props.NextFreeItem(ref r));
+                Randomizer randomizer = new Randomizer((int)PropManager.instance.m_props.NextFreeItem(ref r));
                 float scale = info.m_minScale + (float)((double)randomizer.Int32(10000U) * ((double)info.m_maxScale - (double)info.m_minScale) * 9.99999974737875E-05);
                 SignPlacementTool.RenderOverlay(cameraInfo, info, this.m_cachedPosition, scale, this.m_cachedAngle, toolColor);
             }
@@ -158,7 +156,6 @@ namespace MarkARoute.Tools
             float f = (float)((double)Mathf.Max(info.m_generatedInfo.m_size.x, info.m_generatedInfo.m_size.z) * (double)scale * 0.5);
             alpha = Mathf.Min(alpha, 2f / Mathf.Max(1f, Mathf.Sqrt(f)));
         }
-
         protected override void OnToolUpdate()
         {
             PropInfo propInfo = this.m_propInfo;
@@ -168,13 +165,14 @@ namespace MarkARoute.Tools
             if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
                 this.m_angle = (this.m_angle + 15f) % 360f;
+                EventBusManager.Instance().Publish("setAngle", this.m_angle);
             }
             else if (Input.GetKeyDown(KeyCode.RightArrow))
             {
                 this.m_angle = (this.m_angle - 15f) % 360f;
+                EventBusManager.Instance().Publish("setAngle", this.m_angle);
             }
         }
-
         protected override void OnToolLateUpdate()
         {
             this.m_mouseRay = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -201,8 +199,6 @@ namespace MarkARoute.Tools
             ToolBase.RaycastInput input = new ToolBase.RaycastInput(this.m_mouseRay, this.m_mouseRayLength);
             input.m_ignoreSegmentFlags = NetSegment.Flags.None;
             input.m_ignoreNodeFlags = NetNode.Flags.None;
-            if ((Singleton<ToolManager>.instance.m_properties.m_mode & ItemClass.Availability.AssetEditor) != ItemClass.Availability.None)
-                input.m_currentEditObject = true;
             ulong[] collidingSegments;
             ulong[] collidingBuildings;
             this.m_toolController.BeginColliding(out collidingSegments, out collidingBuildings);
@@ -212,14 +208,12 @@ namespace MarkARoute.Tools
                 if (this.m_mouseRayValid && ToolBase.RayCast(input, out output))
                 {
 
-                    //if (!output.m_currentEditObject)
                     float terrainHeight = TerrainManager.instance.SampleDetailHeight(output.m_hitPos);
                     output.m_hitPos.y = output.m_hitPos.y > terrainHeight ? output.m_hitPos.y : terrainHeight;
                     Randomizer r = this.m_randomizer;
                     ushort id = Singleton<PropManager>.instance.m_props.NextFreeItem(ref r);
                     this.m_mousePosition = output.m_hitPos;
                     this.m_placementErrors = ToolErrors.None;
-                    this.m_fixedHeight = output.m_currentEditObject;
 
                 }
                 else
@@ -236,5 +230,16 @@ namespace MarkARoute.Tools
             return ToolErrors.None;
         }
 
+        public void onReceiveEvent(string eventName, object eventData)
+        {
+            switch (eventName)
+            {
+                case "setAngle":
+                    this.m_angle = (float)eventData;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }

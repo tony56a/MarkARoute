@@ -13,6 +13,9 @@ namespace MarkARoute
     public class MarkARouteOptions : MonoBehaviour
     {
         public static bool mInGame = false;
+        private static UICheckBox shouldLoadDefaultSign = null;
+        private static UIHelperBase shieldBase = null;
+
         private static UIDropDown shieldSelector = null;
         private static string shieldKey = "";
         private static RouteShieldInfo shieldInfo;
@@ -24,13 +27,18 @@ namespace MarkARoute
 
         public void generateSettings(UIHelperBase helper)
         {
-                shieldSelector = helper.AddDropdown("Route Shield", null, 0, onShieldSelected) as UIDropDown;
-                mUpOffsetSlider = helper.AddSlider("Text Up offset", -1, 1, 0.1f, 0, onUpOffsetChanged) as UISlider;
-                mLeftOffsetSlider = helper.AddSlider("Text Left offset", -1, 1, 0.1f, 0, onLeftOffsetChanged) as UISlider;
-                mTextSizeSlider = helper.AddSlider("Text Size", 0.1f, 1, 0.1f, 0, onTextSizeChanged) as UISlider;
-                mTextColor = helper.AddDropdown("Text Color", new string[] { "Black", "White" }, 0, onTextColorChanged) as UIDropDown;
-                mSaveButton = helper.AddButton("Save", onSaveBtnClicked) as UIButton;
+            bool hasOption = ModSettings.Instance().settings.Contains("loadMotorwaySigns");
+            shouldLoadDefaultSign = helper.AddCheckbox("Should show game default highway signs", hasOption ? (bool)ModSettings.Instance().settings["loadMotorwaySigns"] : true, onShouldDefaultSignChecked) as UICheckBox;
+            shieldBase = helper.AddGroup("Route Shield Options");
+            shieldSelector = shieldBase.AddDropdown("Route Shield", null, 0, onShieldSelected) as UIDropDown;
+            mUpOffsetSlider = shieldBase.AddSlider("Text Up offset", -1, 1, 0.1f, 0, onUpOffsetChanged) as UISlider;
+            mLeftOffsetSlider = shieldBase.AddSlider("Text Left offset", -1, 1, 0.1f, 0, onLeftOffsetChanged) as UISlider;
+            mTextSizeSlider = shieldBase.AddSlider("Text Size", 0.1f, 1, 0.1f, 0, onTextSizeChanged) as UISlider;
+            mTextColor = shieldBase.AddDropdown("Text Color", new string[] { "Black", "White" }, 0, onTextColorChanged) as UIDropDown;
+            mSaveButton = shieldBase.AddButton("Save", onSaveBtnClicked) as UIButton;
         }
+
+
 
         private static bool loaded()
         {
@@ -46,7 +54,8 @@ namespace MarkARoute
         {
             if (loaded())
             {
-
+                bool hasOption = ModSettings.Instance().settings.Contains("loadMotorwaySigns");
+                MarkARouteOptions.shouldLoadDefaultSign.isChecked = hasOption ? (bool)ModSettings.Instance().settings["loadMotorwaySigns"] : true;
                 shieldKey = RouteShieldConfig.Instance().routeShieldDictionary.Keys.ToList()[0];
                 shieldInfo = RouteShieldConfig.Instance().routeShieldDictionary[shieldKey];
                 int color = shieldInfo.textColor == Color.black ? 0 : 1;
@@ -58,9 +67,15 @@ namespace MarkARoute
             }
         }
 
+        private void onShouldDefaultSignChecked(bool isChecked)
+        {
+            ModSettings.Instance().settings["loadMotorwaySigns"] = isChecked;
+            RenderingManager.instance.replaceProp(isChecked);
+        }
+
         private void onSaveBtnClicked()
         {
-            if(loaded())
+            if (loaded())
             {
                 RouteShieldConfig.SaveRouteShieldInfo();
                 RenderingManager.instance.ForceUpdate();

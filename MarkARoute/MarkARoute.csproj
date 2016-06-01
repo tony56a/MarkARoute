@@ -68,9 +68,11 @@
     <Compile Include="Tools\SignPlacementTool.cs" />
     <Compile Include="Tools\StaticSignPlacementTool.cs" />
     <Compile Include="UI\AddSignPanel.cs" />
+    <Compile Include="UI\AngleDialog.cs" />
     <Compile Include="UI\MainPanel.cs" />
     <Compile Include="UI\ModPanel.cs" />
     <Compile Include="UI\RouteNamePanel.cs" />
+    <Compile Include="UI\SliderDialog.cs" />
     <Compile Include="UI\TitleBar.cs" />
     <Compile Include="UI\UIFastList.cs" />
     <Compile Include="UI\UIUtils.cs" />
@@ -80,6 +82,8 @@
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\LoggerUtils.cs" />
     <Compile Include="Utils\MeshUtils.cs" />
+    <Compile Include="Utils\ModSettings.cs" />
+    <Compile Include="Utils\ReflectionUtils.cs" />
     <Compile Include="Utils\RouteShieldConfig.cs" />
     <Compile Include="Utils\ShaderUtils.cs" />
     <Compile Include="Utils\SignPropConfig.cs" />

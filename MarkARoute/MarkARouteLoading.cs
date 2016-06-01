@@ -38,9 +38,9 @@ namespace MarkARoute
             if (mode == LoadMode.LoadGame || mode == LoadMode.NewGame || mode == LoadMode.NewMap || mode == LoadMode.LoadMap)
             {
                 UIView view = UIView.GetAView();
-                UITabstrip tabStrip = null;
-                
                 UI = ToolsModifierControl.toolController.gameObject.AddComponent<MainPanel>();
+
+                ModSettings.LoadSettings();
 
                 m_renderingManager = RenderingManager.instance;
                 m_renderingManager.enabled = true;
@@ -61,6 +61,8 @@ namespace MarkARoute
         {
             // First disable dynamic sign updates
             RenderingManager.instance.disableTimer();
+            ModSettings.SaveSettings();
+
             DynamicSignConfig.SaveVmsMsgList();
             MarkARouteOptions.mInGame = false;
         }
@@ -70,15 +72,27 @@ namespace MarkARoute
         /// </summary>
         private void LoadSprites()
         {
+
             bool spriteSuccess = true;
             //TODO: Replace with a loader function( JSON mapping available )
+
+            //We probably need this before we load any displays
             DynamicSignConfig.LoadVmsMsgList();
 
+            string[] files = Directory.GetFiles(FileUtils.GetModPath() + Path.DirectorySeparatorChar + "Shaders");
+            foreach (string file in files)
+            {
+                string[] splitValues = file[0] == Path.DirectorySeparatorChar ? file.Substring(1).Split(Path.DirectorySeparatorChar) : file.Split(Path.DirectorySeparatorChar);
+                string fileName = splitValues[splitValues.Length - 1];
+                string fileKey = fileName.Split('.')[0];
+                spriteSuccess = ShaderUtils.AddShader(file, fileKey) && spriteSuccess;
+            }
+
             RouteShieldConfig.LoadRouteShieldInfo();
-            string[] files = Directory.GetFiles(FileUtils.GetModPath()+ "/Icons");
+            files = Directory.GetFiles(FileUtils.GetModPath()+ Path.DirectorySeparatorChar+"Icons");
             foreach ( string file in files)
             {
-                string[] splitValues = file.Split('\\');
+                string[] splitValues = file[0] == Path.DirectorySeparatorChar ? file.Substring(1).Split(Path.DirectorySeparatorChar) : file.Split(Path.DirectorySeparatorChar);
                 string fileName = splitValues[splitValues.Length - 1];
                 string fileKey = fileName.Split('.')[0];
                 spriteSuccess = SpriteUtils.AddTexture(file, fileKey) && spriteSuccess;
@@ -87,24 +101,7 @@ namespace MarkARoute
                     RouteShieldConfig.Instance().routeShieldDictionary[fileKey] = new RouteShieldInfo(fileKey);
                 }
             }
-
-            files = Directory.GetFiles(FileUtils.GetModPath() + "/Shaders");
-            foreach (string file in files)
-            {
-                string[] splitValues = file.Split('\\');
-                string fileName = splitValues[splitValues.Length - 1];
-                string fileKey = fileName.Split('.')[0];
-                spriteSuccess = ShaderUtils.AddShader(file, fileKey) && spriteSuccess;
-            }
-
-            string fontFile = FileUtils.GetModPath() + "\\test";
-            string fontDst = "test";
-            if (File.Exists(fontFile))
-            {
-                File.Copy(fontFile, fontDst, true);
-
-            }
-
+            
             if (!spriteSuccess)
             {
                 LoggerUtils.LogError("Failed to load some sprites!");
