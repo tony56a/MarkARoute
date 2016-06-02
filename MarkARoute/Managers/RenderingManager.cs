@@ -53,18 +53,19 @@ namespace MarkARoute.Managers
             m_fontDict = new Dictionary<string, Font>();
             m_signPropDict = new Dictionary<string, PropInfo>();
             List<string> meshKeys = new List<string>(SignPropConfig.signPropInfoDict.Keys);
+            List<PrefabInfo> m_allPropInfos = Resources.FindObjectsOfTypeAll<PrefabInfo>().Where(prefabInfo =>
+                                                        prefabInfo.GetType().Equals(typeof(PropInfo))).ToList();
 
             // Bit of a placeholder hack, since we don't support multiple type of VMS models as of yet
             meshKeys.Add("electronic_sign_gantry");
 
-            for (uint i = 0; i < PrefabCollection<PropInfo>.PrefabCount(); ++i)
+            for (int i = 0; i < meshKeys.Count; ++i)
             {
-                for (int j = 0; j < meshKeys.Count; j++)
+                foreach (PrefabInfo prefab in m_allPropInfos)
                 {
-                    if (PrefabCollection<PropInfo>.GetPrefab(i).name.ToLower().Contains(meshKeys[j]))
+                    if (prefab.name.ToLower().Contains(meshKeys[i]))
                     {
-                        m_signPropDict[meshKeys[j]] = PrefabCollection<PropInfo>.GetLoaded(i);
-                        meshKeys.RemoveAt(j);
+                        m_signPropDict[meshKeys[i]] = prefab as PropInfo;
                     }
                 }
             }
