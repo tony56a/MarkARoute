@@ -22,11 +22,7 @@ namespace MarkARoute.Managers
         public bool m_registered = false;
         public bool m_routeEnabled = true;
 
-        // List of fonts that we want to load for the mod
-        public readonly List<string> m_desiredFonts = new List<string> { "Highway Gothic", "Electronic Highway Sign", "Transport" };
-
         public Dictionary<string, PropInfo> m_signPropDict;
-        public Dictionary<string, Font> m_fontDict;
 
         Timer messageUpdateTimer = new Timer();
         public volatile bool m_updateDynamicSignFlag = false;
@@ -50,7 +46,6 @@ namespace MarkARoute.Managers
 
         public bool LoadPropMeshes()
         {
-            m_fontDict = new Dictionary<string, Font>();
             m_signPropDict = new Dictionary<string, PropInfo>();
             List<string> meshKeys = new List<string>(SignPropConfig.signPropInfoDict.Keys);
             List<PrefabInfo> m_allPropInfos = Resources.FindObjectsOfTypeAll<PrefabInfo>().Where(prefabInfo =>
@@ -67,15 +62,6 @@ namespace MarkARoute.Managers
                     {
                         m_signPropDict[meshKeys[i]] = prefab as PropInfo;
                     }
-                }
-            }
-
-            foreach (string fontName in m_desiredFonts)
-            {
-                Font font = Font.CreateDynamicFontFromOSFont(fontName, DistrictManager.instance.m_properties.m_areaNameFont.baseFont.fontSize);
-                if (font != null)
-                {
-                    m_fontDict[fontName] = font;
                 }
             }
 
@@ -121,6 +107,9 @@ namespace MarkARoute.Managers
             }
 
             replaceProp(ModSettings.Instance().settings.Contains("loadMotorwaySigns") ? (bool)ModSettings.Instance().settings["loadMotorwaySigns"] : true);
+
+            DistrictManager districtManager = DistrictManager.instance;
+            ShaderUtils.m_shaderStore.Add("fallback", districtManager.m_properties.m_areaNameShader);
 
             //Only start dynamic signs after everything's loaded
             RenderingManager.instance.initTimer();
@@ -251,6 +240,10 @@ namespace MarkARoute.Managers
                                 NetNode endNode = netManager.m_nodes.m_buffer[netSegment.m_endNode];
                                 Vector3 startNodePosition = startNode.m_position;
 
+                                if( !SpriteUtils.m_textureStore.ContainsKey(shieldInfo.textureName))
+                                {
+                                    LoggerUtils.Log("WTF, No texture found for route shield" + shieldInfo.textureName);
+                                }
                                 Material mat = SpriteUtils.m_textureStore[shieldInfo.textureName];
                                 route.m_shieldObject.GetComponent<Renderer>().material = mat;
 
@@ -268,8 +261,16 @@ namespace MarkARoute.Managers
 
                                 route.m_numMesh.anchor = TextAnchor.MiddleCenter;
 
-                                route.m_numMesh.font = m_fontDict.ContainsKey("Highway Gothic") ? m_fontDict["Highway Gothic"] : districtManager.m_properties.m_areaNameFont.baseFont;
+                                route.m_numMesh.font = FontUtils.m_fontStore.ContainsKey("Highway Gothic") ? FontUtils.m_fontStore["Highway Gothic"] : districtManager.m_properties.m_areaNameFont.baseFont;
                                 route.m_numMesh.GetComponent<Renderer>().material = route.m_numMesh.font.material;
+                                if (ShaderUtils.m_shaderStore.ContainsKey("font"))
+                                {
+                                    route.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["font"];
+                                }
+                                else
+                                {
+                                    route.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["fallback"];
+                                }
                                 //TODO: Tie the font size to the font size option
                                 route.m_numMesh.fontSize = 50;
                                 route.m_numMesh.transform.position = startNode.m_position;
@@ -323,9 +324,16 @@ namespace MarkARoute.Managers
                         sign.m_shieldObject.GetComponent<Renderer>().sortingOrder = 1000;
 
                         sign.m_numMesh.anchor = TextAnchor.MiddleCenter;
-                        sign.m_numMesh.font = m_fontDict.ContainsKey("Highway Gothic") ? m_fontDict["Highway Gothic"] : districtManager.m_properties.m_areaNameFont.baseFont;
+                        sign.m_numMesh.font = FontUtils.m_fontStore.ContainsKey("Highway Gothic") ? FontUtils.m_fontStore["Highway Gothic"] : districtManager.m_properties.m_areaNameFont.baseFont;
                         sign.m_numMesh.GetComponent<Renderer>().material = sign.m_numMesh.font.material;
-
+                        if (ShaderUtils.m_shaderStore.ContainsKey("font"))
+                        {
+                            sign.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["font"];
+                        }
+                        else
+                        {
+                            sign.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["fallback"];
+                        }
                         //TODO: Tie the font size to the font size option
                         sign.m_numMesh.fontSize = 50;
                         sign.m_numMesh.transform.position = position;
@@ -341,6 +349,7 @@ namespace MarkARoute.Managers
                         sign.m_numMesh.transform.localScale = new Vector3(shieldInfo.textScale, shieldInfo.textScale, shieldInfo.textScale);
                         sign.m_numMesh.GetComponent<Renderer>().material.color = shieldInfo.textColor;
                         sign.m_numMesh.text = sign.m_route.ToString();
+                        sign.m_numMesh.TE
 
                         sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
 
@@ -353,9 +362,17 @@ namespace MarkARoute.Managers
                     for (int i = 0; i < numSignProps; i++)
                     {
                         sign.m_destinationMesh[i].anchor = TextAnchor.MiddleCenter;
-                        sign.m_destinationMesh[i].font = m_fontDict.ContainsKey(signPropInfo.fontType) ? m_fontDict[signPropInfo.fontType] : districtManager.m_properties.m_areaNameFont.baseFont;
+                        sign.m_destinationMesh[i].font = FontUtils.m_fontStore.ContainsKey(signPropInfo.fontType) ? FontUtils.m_fontStore[signPropInfo.fontType] : districtManager.m_properties.m_areaNameFont.baseFont;
                         sign.m_destinationMesh[i].font.material.SetColor("Text Color", Color.white);
-                        sign.m_destinationMesh[i].font.material.shader = ShaderUtils.m_shaderStore["Font"];
+
+                        if (ShaderUtils.m_shaderStore.ContainsKey("font"))
+                        {
+                            sign.m_destinationMesh[i].font.material.shader = ShaderUtils.m_shaderStore["font"];
+                        }
+                        else
+                        {
+                            sign.m_destinationMesh[i].font.material.shader = ShaderUtils.m_shaderStore["fallback"];
+                        }
 
                         sign.m_destinationMesh[i].GetComponent<Renderer>().material = sign.m_destinationMesh[i].font.material;
                         //TODO: Tie the font size to the font size option
@@ -386,8 +403,16 @@ namespace MarkARoute.Managers
                     sign.m_sign.transform.position = position;
 
                     sign.m_messageTextMesh.anchor = TextAnchor.MiddleLeft;
-                    sign.m_messageTextMesh.font = m_fontDict.ContainsKey("Electronic Highway Sign") ? m_fontDict["Electronic Highway Sign"] : districtManager.m_properties.m_areaNameFont.baseFont;
-                    sign.m_messageTextMesh.font.material.shader = ShaderUtils.m_shaderStore["Font"];
+                    sign.m_messageTextMesh.font = FontUtils.m_fontStore.ContainsKey("Electronic Highway Sign") ? FontUtils.m_fontStore["Electronic Highway Sign"] : districtManager.m_properties.m_areaNameFont.baseFont;
+
+                    if( ShaderUtils.m_shaderStore.ContainsKey("font"))
+                    {
+                        sign.m_messageTextMesh.font.material.shader = ShaderUtils.m_shaderStore["font"];
+                    }
+                    else
+                    {
+                        sign.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["fallback"];
+                    }
                     sign.m_messageTextMesh.color = (new Color(1, 0.77f, 0.56f, 1f));
                     sign.m_messageTextMesh.font.material.SetColor("Text Color", new Color(1, 0.77f, 0.56f, 1f));
 

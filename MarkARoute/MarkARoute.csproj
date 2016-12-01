@@ -80,6 +80,7 @@
     <Compile Include="UI\UsedRoutesPanel.cs" />
     <Compile Include="Utils\DynamicSignConfig.cs" />
     <Compile Include="Utils\FileUtils.cs" />
+    <Compile Include="Utils\FontUtils.cs" />
     <Compile Include="Utils\LoggerUtils.cs" />
     <Compile Include="Utils\MeshUtils.cs" />
     <Compile Include="Utils\ModSettings.cs" />
