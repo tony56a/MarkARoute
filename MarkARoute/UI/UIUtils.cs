@@ -9,6 +9,9 @@ namespace MarkARoute.UI
 {
     class UIUtils
     {
+        public static readonly RectOffset UIPadding = new RectOffset(5, 5, 5, 5);
+
+
         static Dictionary<string, UITextureAtlas> sm_atlases = new Dictionary<string, UITextureAtlas>();
 
         // Figuring all this was a pain (no documentation whatsoever)

@@ -1,18 +1,10 @@
-﻿using ColossalFramework;
-using ColossalFramework.Packaging;
-using ColossalFramework.Plugins;
-using ColossalFramework.UI;
+﻿using ColossalFramework.UI;
 using ICities;
 using MarkARoute.Managers;
 using MarkARoute.UI;
 using MarkARoute.Utils;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using UnityEngine;
 
 namespace MarkARoute
 {
@@ -89,15 +81,32 @@ namespace MarkARoute
                 string[] splitValues = file[0] == Path.DirectorySeparatorChar ? file.Substring(1).Split(Path.DirectorySeparatorChar) : file.Split(Path.DirectorySeparatorChar);
                 string fileName = splitValues[splitValues.Length - 1];
                 string fileKey = fileName.Split('.')[0];
-                spriteSuccess = SpriteUtils.AddTexture(file, fileKey) && spriteSuccess;
+                spriteSuccess = SpriteUtils.AddSprite(file, fileKey) && spriteSuccess;
                 if(!RouteShieldConfig.Instance().routeShieldDictionary.ContainsKey(fileKey))
                 {
                     RouteShieldConfig.Instance().routeShieldDictionary[fileKey] = new RouteShieldInfo(fileKey);
                 }
             }
 
+            string[] directories = Directory.GetDirectories(FileUtils.GetAltPath(FileUtils.TEXTURES));
+            foreach (string directory in directories)
+            {
+                files = Directory.GetFiles(directory);
+                foreach (string file in files)
+                {
+                    string[] splitValues = file[0] == Path.DirectorySeparatorChar ? file.Substring(1).Split(Path.DirectorySeparatorChar) : file.Split(Path.DirectorySeparatorChar);
+                    string fileName = splitValues[splitValues.Length - 1];
+                    string directoryName = splitValues[splitValues.Length - 2];
+
+                    string fileKey = fileName.Split('.')[0];
+                    spriteSuccess = SpriteUtils.AddTexture(file, directoryName, fileKey) && spriteSuccess;
+
+                }
+            }
+
             //TODO: When we need it, load a json descriptor file for relevant shaders here
             ShaderUtils.AddShader("Shaders/font", "font");
+            ShaderUtils.AddShader("Shaders/transparent-vertex-lit", "transparent-vertex-lit");
 
             //TODO: When we need it, load a json descriptor file for relevant fonts here
             FontUtils.AddFonts();

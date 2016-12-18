@@ -19,7 +19,7 @@ namespace MarkARoute.Tools
 
         protected override void HandleSignPlaced()
         {
-            RouteManager.Instance().SetDynamicSign(this.m_cachedPosition, this.m_cachedAngle, routePrefix, routeStr, segmentId);
+            RouteManager.instance.SetDynamicSign(this.m_cachedPosition, this.m_cachedAngle, routePrefix, routeStr, segmentId);
             RenderingManager.instance.ForceUpdate();
             ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
             ToolsModifierControl.SetTool<DefaultTool>();

@@ -51,7 +51,7 @@ namespace MarkARoute.Tools
                                 //unset tool
                                 ShowToolInfo(false, null, new Vector3());
                                 GameObject.Destroy(dynamicContainer.m_signObj);
-                                RouteManager.Instance().m_dynamicSignList.Remove(dynamicContainer);
+                                RouteManager.instance.m_dynamicSignList.Remove(dynamicContainer);
                             }
                             else
                             {
@@ -73,7 +73,7 @@ namespace MarkARoute.Tools
                                 //unset tool
                                 ShowToolInfo(false, null, new Vector3());
                                 GameObject.Destroy(container.m_signObj);
-                                RouteManager.Instance().m_signList.Remove(container);
+                                RouteManager.instance.m_signList.Remove(container);
                             }
                             else
                             {
@@ -99,9 +99,9 @@ namespace MarkARoute.Tools
             Vector3 _b = currentPosition.origin + normalized * Camera.main.farClipPlane;
             Segment3 ray = new Segment3(origin, _b);
 
-            foreach (DynamicSignContainer container in RouteManager.Instance().m_dynamicSignList)
+            foreach (DynamicSignContainer container in RouteManager.instance.m_dynamicSignList)
             {
-                if (ray.DistanceSqr(container.pos) < 800)
+                if (ray.DistanceSqr(container.pos) < 500)
                 {
                     returnValue = container;
                     return true;
@@ -119,7 +119,7 @@ namespace MarkARoute.Tools
             Vector3 _b = currentPosition.origin + normalized * Camera.main.farClipPlane;
             Segment3 ray = new Segment3(origin, _b);
 
-            foreach (SignContainer container in RouteManager.Instance().m_signList)
+            foreach (SignContainer container in RouteManager.instance.m_signList)
             {
                 if (ray.DistanceSqr(container.pos) < 800)
                 {

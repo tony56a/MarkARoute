@@ -11,6 +11,9 @@ namespace MarkARoute.Tools
     {
         public string signType;
 
+        public bool useTextureReplace;
+        public List<string> textureReplaceStrings;
+
         protected override void Awake()
         {
             base.BaseAwake();
@@ -25,7 +28,13 @@ namespace MarkARoute.Tools
 
         protected override void HandleSignPlaced()
         {
-            RouteManager.Instance().SetSign(this.m_cachedPosition, this.m_cachedAngle, routePrefix, routeStr, destination, this.signType);
+            if (useTextureReplace)
+            {
+                RouteManager.instance.SetSign(this.m_cachedPosition, this.m_cachedAngle, this.signType, textureReplaceStrings);
+            }else
+            {
+                RouteManager.instance.SetSign(this.m_cachedPosition, this.m_cachedAngle, routePrefix, routeStr, destination, this.signType);
+            }
             RenderingManager.instance.ForceUpdate();
             ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
             ToolsModifierControl.SetTool<DefaultTool>();

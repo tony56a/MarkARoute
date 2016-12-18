@@ -120,9 +120,9 @@ namespace MarkARoute.Managers
             NetManager netManager = NetManager.instance;
             DistrictManager districtManager = DistrictManager.instance;
             cameraInfo.m_height = 100;
-            if (m_lastCount != RouteManager.Instance().m_routeDict.Count)
+            if (m_lastCount != RouteManager.instance.m_routeDict.Count)
             {
-                m_lastCount = RouteManager.Instance().m_routeDict.Count;
+                m_lastCount = RouteManager.instance.m_routeDict.Count;
 
                 try
                 {
@@ -136,13 +136,13 @@ namespace MarkARoute.Managers
 
             if (!textHidden && cameraInfo.m_height > m_renderHeight )
             {
-                foreach (RouteContainer route in RouteManager.Instance().m_routeDict.Values)
+                foreach (RouteContainer route in RouteManager.instance.m_routeDict.Values)
                 {
                     route.m_shieldMesh.GetComponent<Renderer>().enabled = false;
                     route.m_numMesh.GetComponent<Renderer>().enabled = false;
                 }
 
-                foreach (SignContainer sign in RouteManager.Instance().m_signList)
+                foreach (SignContainer sign in RouteManager.instance.m_signList)
                 {
                     /*sign.m_destinationMesh.GetComponent<Renderer>().enabled = false;
                     sign.m_shieldMesh.GetComponent<Renderer>().enabled = false;
@@ -156,13 +156,13 @@ namespace MarkARoute.Managers
 
                 if (m_routeEnabled)
                 {
-                    foreach (RouteContainer route in RouteManager.Instance().m_routeDict.Values)
+                    foreach (RouteContainer route in RouteManager.instance.m_routeDict.Values)
                     {
                         route.m_shieldMesh.GetComponent<Renderer>().enabled = true;
                         route.m_numMesh.GetComponent<Renderer>().enabled = true;
                     }
 
-                    foreach (SignContainer sign in RouteManager.Instance().m_signList)
+                    foreach (SignContainer sign in RouteManager.instance.m_signList)
                     {
                         /*sign.m_destinationMesh.GetComponent<Renderer>().enabled = true;
                         sign.m_shieldMesh.GetComponent<Renderer>().enabled = true;
@@ -180,7 +180,7 @@ namespace MarkARoute.Managers
                 float avg;
                 float lowTrafficMsgChance;
                 String msgText;
-                foreach (DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignList)
+                foreach (DynamicSignContainer sign in RouteManager.instance.m_dynamicSignList)
                 {
                     avg = (float)sign.m_trafficDensity;
                     avg -= sign.m_trafficDensity / 3;
@@ -219,7 +219,7 @@ namespace MarkARoute.Managers
             {
                 UIFontManager.Invalidate(districtManager.m_properties.m_areaNameFont);
 
-                foreach (RouteContainer route in RouteManager.Instance().m_routeDict.Values)
+                foreach (RouteContainer route in RouteManager.instance.m_routeDict.Values)
                 {
 
                     if (route.m_segmentId != 0)
@@ -240,11 +240,11 @@ namespace MarkARoute.Managers
                                 NetNode endNode = netManager.m_nodes.m_buffer[netSegment.m_endNode];
                                 Vector3 startNodePosition = startNode.m_position;
 
-                                if( !SpriteUtils.m_textureStore.ContainsKey(shieldInfo.textureName))
+                                if( !SpriteUtils.mSpriteStore.ContainsKey(shieldInfo.textureName))
                                 {
                                     LoggerUtils.Log("WTF, No texture found for route shield" + shieldInfo.textureName);
                                 }
-                                Material mat = SpriteUtils.m_textureStore[shieldInfo.textureName];
+                                Material mat = SpriteUtils.mSpriteStore[shieldInfo.textureName];
                                 route.m_shieldObject.GetComponent<Renderer>().material = mat;
 
                                 //TODO: Make mesh size dependent on text size
@@ -295,15 +295,106 @@ namespace MarkARoute.Managers
                     }
                 }
 
-                foreach (SignContainer sign in RouteManager.Instance().m_signList)
+                foreach (SignContainer sign in RouteManager.instance.m_signList)
                 {
 
                     Vector3 position = new Vector3(sign.x, sign.y, sign.z);
                     string signPropType = (sign.m_exitNum == null || !m_signPropDict.ContainsKey(sign.m_exitNum)) ? "hwysign" : sign.m_exitNum;
                     SignPropInfo signPropInfo = SignPropConfig.signPropInfoDict[signPropType];
                     int numSignProps = signPropInfo.isDoubleGantry ? 2 : 1;
+                    
+                    if(sign.m_signObj != null)
+                    {
+                        continue;
+                    }
 
-                    sign.m_sign.GetComponent<Renderer>().material = m_signPropDict[signPropType].m_material;
+                    if (sign.m_routePrefix != null)
+                    {
+                        sign.m_shieldObject = new GameObject(position + "shield");
+                        sign.m_shieldObject.AddComponent<MeshRenderer>();
+                        sign.m_shieldMesh = sign.m_shieldObject.AddComponent<MeshFilter>();
+                        GameObject numTextObject = new GameObject(position + "text");
+                        numTextObject.transform.parent = sign.m_shieldObject.transform;
+                        numTextObject.AddComponent<MeshRenderer>();
+                        numTextObject.GetComponent<MeshRenderer>().sortingOrder = 1001;
+                        sign.m_numMesh = numTextObject.AddComponent<TextMesh>();
+                    }
+
+
+                    sign.m_signObj = new GameObject(position + "sign");
+                    sign.m_signObj.AddComponent<MeshRenderer>();
+                    sign.m_sign = sign.m_signObj.AddComponent<MeshFilter>();
+
+                    sign.m_destinationMeshObject = new GameObject[numSignProps];
+                    sign.m_destinationMesh = new TextMesh[numSignProps];
+
+                    //Todo: move the route info back to the renderingManager( or move the rendering position here?? )
+                    sign.m_sign.transform.position = position;
+                    sign.m_sign.transform.Rotate(0, -1 * Mathf.Rad2Deg * sign.angle, 0);
+
+                    for (int i = 0; i < numSignProps; i++)
+                    {
+                        sign.m_destinationMeshObject[i] = new GameObject(position + i.ToString() + "destText");
+                        sign.m_destinationMesh[i] = sign.m_destinationMeshObject[i].AddComponent<TextMesh>();
+
+                        sign.m_destinationMesh[i].transform.position = position;
+                        sign.m_destinationMesh[i].transform.parent = sign.m_sign.transform;
+
+                        sign.m_destinationMesh[i].transform.position = position;
+                        sign.m_destinationMesh[i].transform.Rotate(0, (-1 * Mathf.Rad2Deg * sign.angle) + 270 + signPropInfo.angleOffset, 0);
+                    }
+
+                    if (sign.m_routePrefix != null)
+                    {
+                        sign.m_shieldMesh.transform.position = position;
+
+                        //TODO: Bind the elevation of the mesh to the text z offset
+                        sign.m_shieldMesh.transform.position += (Vector3.up * (0.5f));
+                        sign.m_shieldMesh.transform.localScale = new Vector3(0.18f, 0.18f, 0.18f);
+
+                        sign.m_numMesh.transform.position = position;
+                        sign.m_numMesh.transform.position = sign.m_shieldObject.GetComponent<Renderer>().bounds.center;
+
+                        sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
+                        sign.m_shieldMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * sign.angle) + 270 + signPropInfo.angleOffset, 0);
+
+                        sign.m_shieldMesh.transform.localPosition += new Vector3(0.2f, 6.6f, -5.6f);
+
+                        sign.m_numMesh.transform.parent = sign.m_shieldObject.transform;
+
+                    }
+
+
+                    Material material = m_signPropDict[signPropType].m_material;
+                    if( sign.useTextureOverride)
+                    {
+                        Texture2D texture = material.mainTexture as Texture2D;
+                        material = Instantiate(m_signPropDict[signPropType].m_material) as Material;
+                        Texture2D texCopy = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
+                        texCopy.SetPixels(texture.GetPixels());
+
+                        TextureSignPropInfo signPropTextureInfo = SignPropConfig.texturePropInfoDict[signPropType];
+                        for(int i = 0; i < signPropTextureInfo.numTextures; i++)
+                        {
+                            string textureString = sign.textureOverrides[i];
+                            if (textureString!= null && textureString != RouteManager.NONE)
+                            {
+                                Texture2D otherTexture = SpriteUtils.mTextureStore[signPropType].mTextureRefs[(i+1).ToString()][textureString];
+                                for (int j = 0; j < otherTexture.width; j++)
+                                {
+                                    for (int k = 0; k < otherTexture.height; k++)
+                                    {
+                                        texCopy.SetPixel((int)signPropTextureInfo.drawAreas[i].x + j, (int)signPropTextureInfo.drawAreas[i].yMax - k, otherTexture.GetPixel(j,k));
+                                    }
+                                }
+                            }
+                        }
+                        texCopy.Apply();
+                        material.mainTexture = texCopy;
+
+                    }
+                  
+                    sign.m_sign.GetComponent<Renderer>().material = material;
                     //TODO: Make mesh size dependent on text size
                     sign.m_sign.mesh = m_signPropDict[signPropType].m_mesh;
                     sign.m_sign.transform.position = position;
@@ -311,7 +402,7 @@ namespace MarkARoute.Managers
                     if (sign.m_routePrefix != null)
                     {
                         RouteShieldInfo shieldInfo = RouteShieldConfig.Instance().GetRouteShieldInfo(sign.m_routePrefix);
-                        Material mat = SpriteUtils.m_textureStore[shieldInfo.textureName];
+                        Material mat = SpriteUtils.mSpriteStore[shieldInfo.textureName];
                         sign.m_shieldObject.GetComponent<Renderer>().material = mat;
 
                         //TODO: Make mesh size dependent on text size
@@ -349,11 +440,10 @@ namespace MarkARoute.Managers
                         sign.m_numMesh.transform.localScale = new Vector3(shieldInfo.textScale, shieldInfo.textScale, shieldInfo.textScale);
                         sign.m_numMesh.GetComponent<Renderer>().material.color = shieldInfo.textColor;
                         sign.m_numMesh.text = sign.m_route.ToString();
-                        sign.m_numMesh.TE
 
                         sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
 
-                        sign.m_shieldMesh.transform.localPosition = signPropInfo.shieldOffset;
+                        sign.m_shieldMesh.transform.localPosition = signPropInfo.shieldOffset[0];
                     }
 
 
@@ -386,14 +476,15 @@ namespace MarkARoute.Managers
                         //TODO: Definitely get a map of the texture to the required text offsets 
                         //TODO: Figure out a better ratio for route markers
                         sign.m_destinationMesh[i].transform.localScale = signPropInfo.textScale;
-                        sign.m_destinationMesh[i].text = signPropInfo.isDoubleGantry ? destinationStrings[i] : sign.m_destination;
+                        String msgString = signPropInfo.isDoubleGantry ? destinationStrings[i] : sign.m_destination;
+                        sign.m_destinationMesh[i].text = msgString.Replace("\\n", "\n");
 
                         sign.m_destinationMesh[i].transform.localPosition = sign.m_routePrefix == null ? signPropInfo.textOffsetNoSign[i] : signPropInfo.textOffsetSign[i];
                     }
 
                 }
 
-                foreach (DynamicSignContainer sign in RouteManager.Instance().m_dynamicSignList)
+                foreach (DynamicSignContainer sign in RouteManager.instance.m_dynamicSignList)
                 {
                     Vector3 position = new Vector3(sign.x, sign.y, sign.z);
 
@@ -413,6 +504,7 @@ namespace MarkARoute.Managers
                     {
                         sign.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["fallback"];
                     }
+
                     sign.m_messageTextMesh.color = (new Color(1, 0.77f, 0.56f, 1f));
                     sign.m_messageTextMesh.font.material.SetColor("Text Color", new Color(1, 0.77f, 0.56f, 1f));
 

@@ -1,4 +1,5 @@
-﻿using MarkARoute.Utils;
+﻿using ColossalFramework;
+using MarkARoute.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,10 +9,9 @@ using UnityEngine;
 
 namespace MarkARoute.Managers
 {
-    class RouteManager
+    class RouteManager : Singleton<RouteManager>
     {
-        private static RouteManager instance = null;
-
+        public static string NONE = "None";
         /// <summary>
         /// Dictionary of routes already used, to the number of segments that use that route
         /// </summary> 
@@ -25,16 +25,6 @@ namespace MarkARoute.Managers
         public List<SignContainer> m_signList = new List<SignContainer>(0);
 
         public List<DynamicSignContainer> m_dynamicSignList = new List<DynamicSignContainer>();
-
-
-        public static RouteManager Instance()
-        {
-            if (instance == null)
-            {
-                instance = new RouteManager();
-            }
-            return instance;
-        }
 
         private void DecrementRoadRouteCounter(string routeStr)
         {
@@ -121,70 +111,20 @@ namespace MarkARoute.Managers
         {
             SignContainer signContainer = new SignContainer(position, angle, routePrefix, route, destination);
             signContainer.m_exitNum = signType;
-            string signPropType = signContainer.m_exitNum == null ? "hwysign" : signContainer.m_exitNum;
-            SignPropInfo config = SignPropConfig.signPropInfoDict[signPropType];
-            int numSignObjs = config.isDoubleGantry ? 2 : 1;
 
-            if (routePrefix != null)
-            {
-                signContainer.m_shieldObject = new GameObject(position + "shield");
-                signContainer.m_shieldObject.AddComponent<MeshRenderer>();
-                signContainer.m_shieldMesh = signContainer.m_shieldObject.AddComponent<MeshFilter>();
-                GameObject numTextObject = new GameObject(position + "text");
-                numTextObject.transform.parent = signContainer.m_shieldObject.transform;
-                numTextObject.AddComponent<MeshRenderer>();
-                numTextObject.GetComponent<MeshRenderer>().sortingOrder = 1001;
-                signContainer.m_numMesh = numTextObject.AddComponent<TextMesh>();
-            }
-
-
-            signContainer.m_signObj = new GameObject(position + "sign");
-            signContainer.m_signObj.AddComponent<MeshRenderer>();
-            signContainer.m_sign = signContainer.m_signObj.AddComponent<MeshFilter>();
-
-            signContainer.m_destinationMeshObject = new GameObject[numSignObjs];
-            signContainer.m_destinationMesh = new TextMesh[numSignObjs];
-
-            //Todo: move the route info back to the renderingManager( or move the rendering position here?? )
-            signContainer.m_sign.transform.position = position;
-            signContainer.m_sign.transform.Rotate(0, -1 * Mathf.Rad2Deg * signContainer.angle, 0);
-
-            for ( int i =0; i< numSignObjs; i++)
-            {
-                signContainer.m_destinationMeshObject[i] = new GameObject(position + i.ToString() + "destText");
-                signContainer.m_destinationMesh[i] = signContainer.m_destinationMeshObject[i].AddComponent<TextMesh>();
-                
-                signContainer.m_destinationMesh[i].transform.position = position;
-                signContainer.m_destinationMesh[i].transform.parent = signContainer.m_sign.transform;
-
-                signContainer.m_destinationMesh[i].transform.position = position;
-                signContainer.m_destinationMesh[i].transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270 + config.angleOffset, 0);
-            }
-         
-            if (routePrefix != null)
-            {
-
-                signContainer.m_shieldMesh.transform.position = position;
-
-                //TODO: Bind the elevation of the mesh to the text z offset
-                signContainer.m_shieldMesh.transform.position += (Vector3.up * (0.5f));
-                signContainer.m_shieldMesh.transform.localScale = new Vector3(0.18f, 0.18f, 0.18f);
-
-                signContainer.m_numMesh.transform.position = position;
-                signContainer.m_numMesh.transform.position = signContainer.m_shieldObject.GetComponent<Renderer>().bounds.center;
-
-                signContainer.m_shieldMesh.transform.parent = signContainer.m_sign.transform;
-                signContainer.m_shieldMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * signContainer.angle) + 270 + config.angleOffset, 0);
-
-                signContainer.m_shieldMesh.transform.localPosition += new Vector3(0.2f, 6.6f, -5.6f);
-
-                signContainer.m_numMesh.transform.parent = signContainer.m_shieldObject.transform;
-
-            }
             m_signList.Add(signContainer);
             EventBusManager.Instance().Publish("forceUpdateSigns", null);
 
         }
+
+        internal void SetSign(Vector3 position, float angle, string signType, List<string> textureReplaceStrings)
+        {
+            SignContainer signContainer = new SignContainer(position, angle, textureReplaceStrings);
+            signContainer.m_exitNum = signType;
+            m_signList.Add(signContainer);
+            EventBusManager.Instance().Publish("forceUpdateSigns", null);
+        }
+
 
         public void DeleteSign(SignContainer container)
         {
@@ -353,6 +293,19 @@ namespace MarkARoute.Managers
         public float y = 0;
         public float z = 0;
         public float angle = 0;
+
+        [XmlElement(IsNullable = true)]
+        public int shieldIndex = 0;
+
+        [XmlElement(IsNullable = true)]
+        public bool useTextureOverride = false;
+
+        [XmlElement(IsNullable = true)]
+        public List<string> textureOverrides = null;
+
+        [XmlElement(IsNullable = true)]
+        public string extras = null;
+
         [NonSerialized]
         public Vector3 pos = new Vector3();
 
@@ -378,6 +331,7 @@ namespace MarkARoute.Managers
 
         public SignContainer(Vector3 pos, float angle, string routePrefix, string route, string destination)
         {
+            useTextureOverride = false;
             m_routePrefix = routePrefix;
             m_route = route;
             m_destination = destination;
@@ -386,6 +340,17 @@ namespace MarkARoute.Managers
             y = pos.y;
             z = pos.z;
             this.angle = angle;
+        }
+
+        public SignContainer(Vector3 pos, float angle, List<string> textureOverrideStrings)
+        {
+            this.pos = pos;
+            x = pos.x;
+            y = pos.y;
+            z = pos.z;
+            this.angle = angle;
+            useTextureOverride = true;
+            textureOverrides = textureOverrideStrings;
         }
 
         // Stub constructor to get compiler to stop complaining about child objects

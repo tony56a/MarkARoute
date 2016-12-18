@@ -37,6 +37,8 @@ namespace MarkARoute.UI
             markRouteBtn.eventClick += markRouteBtn_eventClick;
             markRouteBtn.relativePosition = new Vector3(180f, 60f);
 
+            modPanel = uiView.AddUIComponent(typeof(ModPanel)) as ModPanel;
+            modPanel.Hide();
             ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
             ToolsModifierControl.SetTool<DefaultTool>();
         }

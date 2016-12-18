@@ -18,12 +18,12 @@ namespace MarkARoute
         public override void OnAfterSimulationTick()
         {
             NetSegment[] buffer = NetManager.instance.m_segments.m_buffer;
-            List<ushort> segments = new List<ushort>(RouteManager.Instance().m_routeDict.Keys);
+            List<ushort> segments = new List<ushort>(RouteManager.instance.m_routeDict.Keys);
             foreach (ushort segment in segments)
             {
                 if( (buffer[segment].m_flags) == NetSegment.Flags.None)
                 {
-                    RouteManager.Instance().DelRoadRoute(segment);
+                    RouteManager.instance.DelRoadRoute(segment);
                 }
             }
             buffer = null;

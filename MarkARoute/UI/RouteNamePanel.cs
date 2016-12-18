@@ -119,7 +119,7 @@ namespace MarkARoute.UI
                 if (routeStr != null)
                 {
                     RenderingManager roadRenderingManager = RenderingManager.instance;
-                    RouteManager.Instance().SetRoute(m_netSegmentId, m_routeTypeDropdown.selectedValue, routeStr, oldRouteStr);
+                    RouteManager.instance.SetRoute(m_netSegmentId, m_routeTypeDropdown.selectedValue, routeStr, oldRouteStr);
 
                     Hide();
                     EventBusManager.Instance().Publish("closeUsedNamePanel", null);

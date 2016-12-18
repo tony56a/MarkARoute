@@ -1,15 +1,27 @@
-﻿using System;
+﻿using MarkARoute.Utils;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace MarkARoute.Utils
 {
+    public class TextureRefs
+    {
+        public Dictionary<string, Dictionary<string, Texture2D>> mTextureRefs = new Dictionary<string, Dictionary<string, Texture2D>> {
+        { "1", new Dictionary<string, Texture2D>() },
+        { "2", new Dictionary<string, Texture2D>() },
+        { "3", new Dictionary<string, Texture2D>() },
+        { "4", new Dictionary<string, Texture2D>() } };
+
+    }
+
     public class SpriteUtils
     {
-        public static Dictionary<string, Material> m_textureStore = new Dictionary<string, Material>();
+        private static Regex textureFileRegex = new Regex("(\\d+)_(.*)");
+
+        public static Dictionary<string, Material> mSpriteStore = new Dictionary<string, Material>();
+        public static Dictionary<string, TextureRefs> mTextureStore = new Dictionary<string, TextureRefs>();
 
         /// <summary>
         /// Load an image file as a material for use when rendering route markers
@@ -17,7 +29,7 @@ namespace MarkARoute.Utils
         /// <param name="texturePath"> The path of the texture</param>
         /// <param name="textureName"> The name of the texture</param>
         /// <returns></returns>
-        public static bool AddTexture(string fullPath, string textureName)
+        public static bool AddSprite(string fullPath, string textureName)
         {
             Shader shader = Shader.Find("UI/Default UI Shader");
             string modPath = FileUtils.GetModPath();
@@ -38,7 +50,45 @@ namespace MarkARoute.Utils
 
             Material material = new Material(shader);
             material.mainTexture = texture;
-            m_textureStore[textureName] = material;
+            mSpriteStore[textureName] = material;
+            return true;
+        }
+
+        public static bool AddTexture(string fullPath, string propName, string textureName)
+        {
+            if (!File.Exists(fullPath))
+            {
+                return false;
+            }
+            Texture2D texture = new Texture2D(2, 2);
+            FileStream fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+            byte[] imageData = new byte[fileStream.Length];
+
+            fileStream.Read(imageData, 0, (int)fileStream.Length);
+            texture.LoadImage(imageData);
+            FixTransparency(texture);
+
+            string drawArea;
+            string drawTexture;
+
+            Match match = textureFileRegex.Match(textureName);
+            if( match.Success)
+            {
+                drawArea = match.Groups[1].Value;
+                drawTexture = match.Groups[2].Value;
+                if (!mTextureStore.ContainsKey(propName)){
+                    mTextureStore[propName] = new TextureRefs();
+                }
+                TextureRefs refs = mTextureStore[propName];
+                if (!refs.mTextureRefs.ContainsKey(drawArea))
+                {
+                    refs.mTextureRefs[drawArea] = new Dictionary<string, Texture2D>();
+                }
+                refs.mTextureRefs[drawArea][drawTexture] = texture;
+
+            }
+
+
             return true;
         }
 

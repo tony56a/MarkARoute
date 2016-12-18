@@ -17,8 +17,6 @@ namespace MarkARoute.Tools
         public bool isDynamic = false;
         public DynamicSignPlacementTool m_dynamicSignPlacementTool = null;
 
-        public AngleDialog angleDialog;
-
         protected override void Awake()
         {
             LoggerUtils.Log("Tool awake");
@@ -69,8 +67,8 @@ namespace MarkARoute.Tools
 #endif
                                     if(!isDynamic)
                                     {
-                                        m_namingPanel.m_initialRouteStr = RouteManager.Instance().GetRouteStr(netSegmentId);
-                                        m_namingPanel.m_initialRoutePrefix = RouteManager.Instance().GetRouteType(netSegmentId);
+                                        m_namingPanel.m_initialRouteStr = RouteManager.instance.GetRouteStr(netSegmentId);
+                                        m_namingPanel.m_initialRoutePrefix = RouteManager.instance.GetRouteType(netSegmentId);
                                         m_namingPanel.UpdateTextField();
 
                                         m_namingPanel.m_netSegmentId = netSegmentId;
@@ -82,13 +80,11 @@ namespace MarkARoute.Tools
                                     else
                                     {
                                         m_dynamicSignPlacementTool.segmentId = netSegmentId;
-                                        m_dynamicSignPlacementTool.routeStr = RouteManager.Instance().GetRouteStr(netSegmentId);
-                                        m_dynamicSignPlacementTool.routePrefix = RouteManager.Instance().GetRouteType(netSegmentId);
-                                        m_dynamicSignPlacementTool.angleDialog = angleDialog;
+                                        m_dynamicSignPlacementTool.routeStr = RouteManager.instance.GetRouteStr(netSegmentId);
+                                        m_dynamicSignPlacementTool.routePrefix = RouteManager.instance.GetRouteType(netSegmentId);
                                         ToolsModifierControl.toolController.CurrentTool = m_dynamicSignPlacementTool;
                                         ToolsModifierControl.SetTool<DynamicSignPlacementTool>();
                                         EventBusManager.Instance().Publish("closeAll", null);
-                                        angleDialog.Show();
                                     }
                                   
                                 }

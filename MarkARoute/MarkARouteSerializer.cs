@@ -27,9 +27,9 @@ namespace MarkARoute
 
             try
             {
-                RouteContainer[] routeNames = RouteManager.Instance().SaveRoutes();
-                SignContainer[] signs = RouteManager.Instance().m_signList.ToArray();
-                DynamicSignContainer[] dynamicSigns = RouteManager.Instance().m_dynamicSignList.ToArray();
+                RouteContainer[] routeNames = RouteManager.instance.SaveRoutes();
+                SignContainer[] signs = RouteManager.instance.m_signList.ToArray();
+                DynamicSignContainer[] dynamicSigns = RouteManager.instance.m_dynamicSignList.ToArray();
 
                 if (routeNames != null)
                 {
@@ -100,7 +100,7 @@ namespace MarkARoute
 
                     if (routeNames != null)
                     {
-                        RouteManager.Instance().Load(routeNames);
+                        RouteManager.instance.Load(routeNames);
                     }
                     else
                     {
@@ -137,7 +137,7 @@ namespace MarkARoute
 
                     if (signNames != null)
                     {
-                        RouteManager.Instance().LoadSigns(signNames);
+                        RouteManager.instance.LoadSigns(signNames);
                     }
                     else
                     {
@@ -174,7 +174,7 @@ namespace MarkARoute
 
                     if (signNames != null)
                     {
-                        RouteManager.Instance().LoadDynamicSigns(signNames);
+                        RouteManager.instance.LoadDynamicSigns(signNames);
                     }
                     else
                     {

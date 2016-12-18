@@ -1,6 +1,8 @@
-﻿using ColossalFramework.Plugins;
+﻿using ColossalFramework.IO;
+using ColossalFramework.Plugins;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -9,6 +11,8 @@ namespace MarkARoute.Utils
 {
     class FileUtils
     {
+
+        public static readonly String TEXTURES = "textures";
 
         private static readonly string MODNAME = "MarkARoute";
         private const ulong m_workshopId = 649674529ul;
@@ -53,6 +57,19 @@ namespace MarkARoute.Utils
                 Debug.Log("Exception trying to load bundle file!" + e.ToString());
                 return null;
             }
+        }
+
+        public static string GetAltPath(string optionPath)
+        {
+            // Originally from: https://github.com/mabako/reddit-for-city-skylines/blob/master/RedditSkylines/Configuration.cs
+            // base it on the path Cities: Skylines uses
+            string path = string.Format("{0}{1}{2}{3}", DataLocation.localApplicationData + Path.DirectorySeparatorChar, "ModConfig" + Path.DirectorySeparatorChar, MODNAME + Path.DirectorySeparatorChar, optionPath);
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            return path;
         }
     }
 }

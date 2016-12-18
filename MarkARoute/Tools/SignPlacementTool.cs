@@ -30,7 +30,7 @@ namespace MarkARoute.Tools
         public string routeStr;
         public string destination;
 
-        public AngleDialog angleDialog;
+        public bool m_angleChanged;
 
         protected abstract override void Awake();
         protected abstract void HandleSignPlaced();
@@ -48,14 +48,12 @@ namespace MarkARoute.Tools
                 {
                     this.m_mouseLeftDown = true;
                     HandleSignPlaced();
-                    //Singleton<SimulationManager>.instance.AddAction(this.CreateProp());
-                    //TODO: Screw it, just place the sign as a mesh immediately
-
                 }
                 else
                 {
                     if (e.button != 1)
                         return;
+                    this.m_angleChanged = false;
                     this.m_mouseRightDown = true;
                 }
             }
@@ -72,6 +70,10 @@ namespace MarkARoute.Tools
                     if (e.button != 1)
                         return;
                     this.m_mouseRightDown = false;
+                    if (!this.m_angleChanged)
+                    {
+                        this.m_angle = (this.m_angle + 15f) % 360f;
+                    }
                 }
             }
         }
@@ -95,10 +97,6 @@ namespace MarkARoute.Tools
             this.m_mouseRightDown = false;
             this.m_placementErrors = ToolBase.ToolErrors.Pending;
             this.m_mouseRayValid = false;
-            if( this.angleDialog != null)
-            {
-                this.angleDialog.Hide();
-            }
         }
 
         public override void RenderGeometry(RenderManager.CameraInfo cameraInfo)
@@ -156,22 +154,23 @@ namespace MarkARoute.Tools
             float f = (float)((double)Mathf.Max(info.m_generatedInfo.m_size.x, info.m_generatedInfo.m_size.z) * (double)scale * 0.5);
             alpha = Mathf.Min(alpha, 2f / Mathf.Max(1f, Mathf.Sqrt(f)));
         }
+
+
         protected override void OnToolUpdate()
         {
             PropInfo propInfo = this.m_propInfo;
             if (propInfo == null)
                 return;
 
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            if(Input.GetKey(KeyCode.Mouse1))
             {
-                this.m_angle = (this.m_angle + 15f) % 360f;
-                EventBusManager.Instance().Publish("setAngle", this.m_angle);
+                float axis = Input.GetAxis("Mouse X");
+                if( Math.Abs(axis) > 0.1 ) {
+                    m_angleChanged = true;
+                    this.m_angle = (this.m_angle + (10f*axis)) % 360f;
+                }
             }
-            else if (Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                this.m_angle = (this.m_angle - 15f) % 360f;
-                EventBusManager.Instance().Publish("setAngle", this.m_angle);
-            }
+           
         }
         protected override void OnToolLateUpdate()
         {

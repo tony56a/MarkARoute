@@ -61,7 +61,7 @@ namespace MarkARoute.UI
         {
 
             usedRoutesList.rowsData.Clear();
-            foreach (string route in RouteManager.Instance().m_usedRoutes.Keys)
+            foreach (string route in RouteManager.instance.m_usedRoutes.Keys)
             {
                 usedRoutesList.rowsData.Add(route);
             }
