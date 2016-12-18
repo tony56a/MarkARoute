@@ -332,6 +332,8 @@ namespace MarkARoute.UI
                         for (int i = 0; i <info.numTextures; i++)
                         {
                             mTextureSelectOptions[i].isHidden = false;
+                            mTextureSelectOptions[i].textureSelectLabel.text = String.Format("{0} texture", info.drawAreaDescriptors[i]);
+
                             mTextureSelectOptions[i].m_textureDropdown.items = null;
                             mTextureSelectOptions[i].m_textureDropdown.AddItem(RouteManager.NONE);
 

@@ -67,6 +67,7 @@ namespace MarkARoute.Utils
             fileStream.Read(imageData, 0, (int)fileStream.Length);
             texture.LoadImage(imageData);
             FixTransparency(texture);
+            texture = FlipTexture(texture);
 
             string drawArea;
             string drawTexture;
@@ -87,9 +88,32 @@ namespace MarkARoute.Utils
                 refs.mTextureRefs[drawArea][drawTexture] = texture;
 
             }
-
-
+            
             return true;
+        }
+
+
+        // Texture rotation methods taken from here: http://stackoverflow.com/questions/35950660/unity-180-rotation-for-a-texture2d-or-maybe-flip-both
+        public static Texture2D FlipTexture( Texture2D texture)
+        {
+            Color32[] pixels = texture.GetPixels32();
+            System.Array.Reverse(pixels, 0, pixels.Length);
+            texture.SetPixels32(pixels);
+
+            Texture2D flipped = new Texture2D(texture.width, texture.height);
+            int xN = texture.width;
+            int yN = texture.height;
+            
+            for (int i = 0; i < xN; i++)
+            {
+                for (int j = 0; j < yN; j++)
+                {
+                    flipped.SetPixel(xN - i - 1, j, texture.GetPixel(i, j));
+                }
+            }
+
+            flipped.Apply();
+            return flipped;            
         }
 
         //Borrowed from Road Namer, which borrowed from Traffic++, which was copied from below

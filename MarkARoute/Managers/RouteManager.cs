@@ -231,7 +231,16 @@ namespace MarkARoute.Managers
             {
                 foreach (SignContainer sign in signContainers)
                 {
-                    SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_destination, sign.m_exitNum);
+                    if (sign.useTextureOverride)
+                    {
+                        SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_exitNum,sign.textureOverrides);
+
+                    }
+                    else
+                    {
+                        SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_destination, sign.m_exitNum);
+
+                    }
                 }
             }
         }

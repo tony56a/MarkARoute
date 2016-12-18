@@ -45,12 +45,14 @@ namespace MarkARoute.Utils
         public int numTextures;
         public List<float> rotationOffsets;
         public List<Rect> drawAreas;
+        public List<string> drawAreaDescriptors;
 
-        public TextureSignPropInfo(int numTextures, List<float> rotationOffsets, List<Rect> drawAreas)
+        public TextureSignPropInfo(int numTextures, List<float> rotationOffsets, List<Rect> drawAreas, List<string> drawAreaDescriptors)
         {
             this.numTextures = numTextures;
             this.rotationOffsets = rotationOffsets;
             this.drawAreas = drawAreas;
+            this.drawAreaDescriptors = drawAreaDescriptors;
         }
     }
 
@@ -61,14 +63,18 @@ namespace MarkARoute.Utils
             { "hwysign",
                 new TextureSignPropInfo(1,
                     new List<float> { 0f },
-                    new List<Rect> {new Rect(133,15,780,348) })
+                    new List<Rect> {new Rect(133,15,780,348) },
+                    new List<string> { "Main Sign" } )
             },
             { "double gantry sign",
                 new TextureSignPropInfo(3,
                     new List<float> { 0f,0f,0f },
                     new List<Rect> { new Rect(220,5,581,364),
                                      new Rect(435,655,580,362),
-                                     new Rect(493,381,294,75) })
+                                     new Rect(493,381,294,75) },
+                    new List<string> { "Right Sign",
+                                       "Left Sign",
+                                       "Exit Sign" } )
             }
         };
 

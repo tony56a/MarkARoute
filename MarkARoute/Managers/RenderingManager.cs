@@ -390,14 +390,18 @@ namespace MarkARoute.Managers
                             }
                         }
                         texCopy.Apply();
-                        material.mainTexture = texCopy;
-
+                        material.mainTexture = texCopy;                       
                     }
-                  
+
                     sign.m_sign.GetComponent<Renderer>().material = material;
                     //TODO: Make mesh size dependent on text size
                     sign.m_sign.mesh = m_signPropDict[signPropType].m_mesh;
                     sign.m_sign.transform.position = position;
+
+                    if (sign.useTextureOverride)
+                    {
+                        continue;
+                    }
 
                     if (sign.m_routePrefix != null)
                     {
