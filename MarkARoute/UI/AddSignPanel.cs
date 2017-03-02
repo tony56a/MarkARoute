@@ -45,7 +45,7 @@ namespace MarkARoute.UI
 
             retVal.m_textureDropdown = UIUtils.CreateDropDown(parent, new Vector2(((parent.width - UIUtils.UIPadding.left - 2 * UIUtils.UIPadding.right)), 25));
             retVal.m_textureDropdown.selectedIndex = 0;
-            retVal.m_textureDropdown.autoSize = true;
+            retVal.m_textureDropdown.autoListWidth = true;
             retVal.m_textureDropdown.relativePosition = new Vector3(UIUtils.UIPadding.left, yPos);
 
             yPos += (retVal.m_textureDropdown.height + UIUtils.UIPadding.top);

@@ -147,15 +147,6 @@ namespace MarkARoute.Tools
             Singleton<RenderManager>.instance.OverlayEffect.DrawCircle(cameraInfo, color, position, size, position.y - 100f, position.y + 100f, false, true);
         }
 
-        public static void CheckOverlayAlpha(PropInfo info, float scale, ref float alpha)
-        {
-            if ((UnityEngine.Object)info == (UnityEngine.Object)null)
-                return;
-            float f = (float)((double)Mathf.Max(info.m_generatedInfo.m_size.x, info.m_generatedInfo.m_size.z) * (double)scale * 0.5);
-            alpha = Mathf.Min(alpha, 2f / Mathf.Max(1f, Mathf.Sqrt(f)));
-        }
-
-
         protected override void OnToolUpdate()
         {
             PropInfo propInfo = this.m_propInfo;

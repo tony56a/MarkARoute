@@ -1,6 +1,7 @@
 ﻿using ColossalFramework.UI;
 using MarkARoute.Managers;
 using MarkARoute.Tools;
+using MarkARoute.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +36,20 @@ namespace MarkARoute.UI
             markRouteBtn.focusedTextColor = new Color32(255, 255, 255, 255);
             markRouteBtn.pressedTextColor = new Color32(30, 30, 44, 255);
             markRouteBtn.eventClick += markRouteBtn_eventClick;
-            markRouteBtn.relativePosition = new Vector3(180f, 60f);
+            markRouteBtn.relativePosition = new Vector3(ModSettings.Instance().btnPositionX, ModSettings.Instance().btnPositionY);
+
+            var dragObject = new GameObject("buttondragger");
+            dragObject.transform.parent = markRouteBtn.transform;
+            var drag = dragObject.AddComponent<UIDragHandle>();
+            drag.width = markRouteBtn.width;
+            drag.height = markRouteBtn.height;
+            drag.target = markRouteBtn;
+            drag.relativePosition = Vector3.zero;
+            markRouteBtn.eventPositionChanged += (component, param) =>
+            {
+                ModSettings.Instance().setBtnPosition(markRouteBtn.relativePosition);
+            };
+
 
             modPanel = uiView.AddUIComponent(typeof(ModPanel)) as ModPanel;
             modPanel.Hide();

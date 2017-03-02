@@ -82,6 +82,7 @@ namespace MarkARoute.Tools
                                         m_dynamicSignPlacementTool.segmentId = netSegmentId;
                                         m_dynamicSignPlacementTool.routeStr = RouteManager.instance.GetRouteStr(netSegmentId);
                                         m_dynamicSignPlacementTool.routePrefix = RouteManager.instance.GetRouteType(netSegmentId);
+                                        m_dynamicSignPlacementTool.SetPropInfo();
                                         ToolsModifierControl.toolController.CurrentTool = m_dynamicSignPlacementTool;
                                         ToolsModifierControl.SetTool<DynamicSignPlacementTool>();
                                         EventBusManager.Instance().Publish("closeAll", null);

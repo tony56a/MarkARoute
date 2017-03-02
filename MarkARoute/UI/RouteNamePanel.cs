@@ -124,7 +124,7 @@ namespace MarkARoute.UI
                     Hide();
                     EventBusManager.Instance().Publish("closeUsedNamePanel", null);
                     EventBusManager.Instance().Publish("forceupdateroadnames", null);
-                    roadRenderingManager.ForceUpdate();
+                    roadRenderingManager.ForceUpdate(false);
                 }
             }
         }

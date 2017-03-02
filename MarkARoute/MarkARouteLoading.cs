@@ -1,10 +1,13 @@
 ﻿using ColossalFramework.UI;
 using ICities;
+using LitJson;
 using MarkARoute.Managers;
 using MarkARoute.UI;
 using MarkARoute.Utils;
 using System;
 using System.IO;
+using System.Reflection;
+using Harmony;
 
 namespace MarkARoute
 {
@@ -17,8 +20,21 @@ namespace MarkARoute
 
         public override void OnCreated(ILoading loading)
         {
+            try
+            {
+                JsonMapper.RegisterExporter<float>((obj, writer) => writer.Write(Convert.ToDouble(obj)));
+                JsonMapper.RegisterImporter<double, float>(input => Convert.ToSingle(input));
+            }
+            catch (NullReferenceException e)
+            {
+                LoggerUtils.Log("Failure at jsonmapper!");
+            }
+
             try //So we don't fuck up loading the city
             {
+                var harmony = HarmonyInstance.Create("com.MarkaRoute");
+                harmony.PatchAll(Assembly.GetExecutingAssembly());
+
                 LoadSprites();
             }
             catch (Exception ex)
@@ -31,10 +47,11 @@ namespace MarkARoute
         {
             if (mode == LoadMode.LoadGame || mode == LoadMode.NewGame )
             {
+                ModSettings.LoadSettings();
+
                 UIView view = UIView.GetAView();
                 UI = ToolsModifierControl.toolController.gameObject.AddComponent<MainPanel>();
 
-                ModSettings.LoadSettings();
 
                 m_renderingManager = RenderingManager.instance;
                 m_renderingManager.enabled = true;
@@ -43,7 +60,7 @@ namespace MarkARoute
                 {
                     RenderManager.RegisterRenderableManager(m_renderingManager);
                     m_renderingManager.m_registered = true;
-                    m_renderingManager.ForceUpdate();
+                    m_renderingManager.ForceUpdate(false);
                 }
 
                 MarkARouteOptions.mInGame = true;
@@ -54,11 +71,11 @@ namespace MarkARoute
 
         public override void OnLevelUnloading()
         {
+            FileMonitoringManager.Instance().stopWatcher();
             // First disable dynamic sign updates
             RenderingManager.instance.disableTimer();
             ModSettings.SaveSettings();
 
-            DynamicSignConfig.SaveVmsMsgList();
             MarkARouteOptions.mInGame = false;
         }
 
@@ -67,7 +84,6 @@ namespace MarkARoute
         /// </summary>
         private void LoadSprites()
         {
-
             bool spriteSuccess = true;
             //TODO: Replace with a loader function( JSON mapping available )
 
@@ -75,34 +91,20 @@ namespace MarkARoute
             DynamicSignConfig.LoadVmsMsgList();
 
             RouteShieldConfig.LoadRouteShieldInfo();
-            String[] files = Directory.GetFiles(FileUtils.GetModPath()+ Path.DirectorySeparatorChar+"Icons");
-            foreach ( string file in files)
+            String[] files = Directory.GetFiles(FileUtils.GetModPath() + Path.DirectorySeparatorChar + "Icons");
+            foreach (string file in files)
             {
                 string[] splitValues = file[0] == Path.DirectorySeparatorChar ? file.Substring(1).Split(Path.DirectorySeparatorChar) : file.Split(Path.DirectorySeparatorChar);
                 string fileName = splitValues[splitValues.Length - 1];
                 string fileKey = fileName.Split('.')[0];
                 spriteSuccess = SpriteUtils.AddSprite(file, fileKey) && spriteSuccess;
-                if(!RouteShieldConfig.Instance().routeShieldDictionary.ContainsKey(fileKey))
+                if (!RouteShieldConfig.Instance().routeShieldDictionary.ContainsKey(fileKey))
                 {
                     RouteShieldConfig.Instance().routeShieldDictionary[fileKey] = new RouteShieldInfo(fileKey);
                 }
             }
 
-            string[] directories = Directory.GetDirectories(FileUtils.GetAltPath(FileUtils.TEXTURES));
-            foreach (string directory in directories)
-            {
-                files = Directory.GetFiles(directory);
-                foreach (string file in files)
-                {
-                    string[] splitValues = file[0] == Path.DirectorySeparatorChar ? file.Substring(1).Split(Path.DirectorySeparatorChar) : file.Split(Path.DirectorySeparatorChar);
-                    string fileName = splitValues[splitValues.Length - 1];
-                    string directoryName = splitValues[splitValues.Length - 2];
-
-                    string fileKey = fileName.Split('.')[0];
-                    spriteSuccess = SpriteUtils.AddTexture(file, directoryName, fileKey) && spriteSuccess;
-
-                }
-            }
+            spriteSuccess = SpriteUtils.ExtractAllTextures();
 
             //TODO: When we need it, load a json descriptor file for relevant shaders here
             ShaderUtils.AddShader("Shaders/font", "font");
@@ -120,5 +122,7 @@ namespace MarkARoute
                 RouteShieldConfig.SaveRouteShieldInfo();
             }
         }
+
+       
     }
 }

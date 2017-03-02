@@ -106,7 +106,7 @@ namespace MarkARoute.Managers
 
             }
 
-            replaceProp(ModSettings.Instance().settings.Contains("loadMotorwaySigns") ? (bool)ModSettings.Instance().settings["loadMotorwaySigns"] : true);
+            replaceProp(ModSettings.Instance().loadMotorwaySigns);
 
             DistrictManager districtManager = DistrictManager.instance;
             ShaderUtils.m_shaderStore.Add("fallback", districtManager.m_properties.m_areaNameShader);
@@ -126,7 +126,7 @@ namespace MarkARoute.Managers
 
                 try
                 {
-                    RenderText();
+                    RenderText(false);
                 }
                 catch (Exception ex)
                 {
@@ -178,7 +178,7 @@ namespace MarkARoute.Managers
 
                 m_updateDynamicSignFlag = false;
                 float avg;
-                float lowTrafficMsgChance;
+                float lowTrafficMsgChance = 0.8f;
                 String msgText;
                 foreach (DynamicSignContainer sign in RouteManager.instance.m_dynamicSignList)
                 {
@@ -188,15 +188,6 @@ namespace MarkARoute.Managers
                     sign.m_trafficDensity = avg;
                     msgText = (sign.m_route == null ? "Traffic" : (sign.m_routePrefix + '-' + sign.m_route)) +
                     String.Format(" moving {0}", sign.m_trafficDensity > 65 ? "slowly" : "well");
-
-                    if (sign.m_trafficDensity < 35)
-                    {
-                        lowTrafficMsgChance = 0.8f;
-                    }
-                    else
-                    {
-                        lowTrafficMsgChance = 0.1f;
-                    }
 
                     sign.m_messageTextMesh.text = (messageRandom.NextDouble() > lowTrafficMsgChance) ? msgText :
                         DynamicSignConfig.Instance().msgStrings[messageRandom.Next(DynamicSignConfig.Instance().msgStrings.Count)];
@@ -209,7 +200,7 @@ namespace MarkARoute.Managers
         /// Redraw the text to be drawn later with a mesh. Use sparingly, as 
         /// this is an expensive task.
         /// </summary>
-        private void RenderText()
+        private void RenderText(bool forceTextureUpdates)
         {
 
             DistrictManager districtManager = DistrictManager.instance;
@@ -240,7 +231,7 @@ namespace MarkARoute.Managers
                                 NetNode endNode = netManager.m_nodes.m_buffer[netSegment.m_endNode];
                                 Vector3 startNodePosition = startNode.m_position;
 
-                                if( !SpriteUtils.mSpriteStore.ContainsKey(shieldInfo.textureName))
+                                if (!SpriteUtils.mSpriteStore.ContainsKey(shieldInfo.textureName))
                                 {
                                     LoggerUtils.Log("WTF, No texture found for route shield" + shieldInfo.textureName);
                                 }
@@ -295,198 +286,7 @@ namespace MarkARoute.Managers
                     }
                 }
 
-                foreach (SignContainer sign in RouteManager.instance.m_signList)
-                {
-
-                    Vector3 position = new Vector3(sign.x, sign.y, sign.z);
-                    string signPropType = (sign.m_exitNum == null || !m_signPropDict.ContainsKey(sign.m_exitNum)) ? "hwysign" : sign.m_exitNum;
-                    SignPropInfo signPropInfo = SignPropConfig.signPropInfoDict[signPropType];
-                    int numSignProps = signPropInfo.isDoubleGantry ? 2 : 1;
-                    
-                    if(sign.m_signObj != null)
-                    {
-                        continue;
-                    }
-
-                    if (sign.m_routePrefix != null)
-                    {
-                        sign.m_shieldObject = new GameObject(position + "shield");
-                        sign.m_shieldObject.AddComponent<MeshRenderer>();
-                        sign.m_shieldMesh = sign.m_shieldObject.AddComponent<MeshFilter>();
-                        GameObject numTextObject = new GameObject(position + "text");
-                        numTextObject.transform.parent = sign.m_shieldObject.transform;
-                        numTextObject.AddComponent<MeshRenderer>();
-                        numTextObject.GetComponent<MeshRenderer>().sortingOrder = 1001;
-                        sign.m_numMesh = numTextObject.AddComponent<TextMesh>();
-                    }
-
-
-                    sign.m_signObj = new GameObject(position + "sign");
-                    sign.m_signObj.AddComponent<MeshRenderer>();
-                    sign.m_sign = sign.m_signObj.AddComponent<MeshFilter>();
-
-                    sign.m_destinationMeshObject = new GameObject[numSignProps];
-                    sign.m_destinationMesh = new TextMesh[numSignProps];
-
-                    //Todo: move the route info back to the renderingManager( or move the rendering position here?? )
-                    sign.m_sign.transform.position = position;
-                    sign.m_sign.transform.Rotate(0, -1 * Mathf.Rad2Deg * sign.angle, 0);
-
-                    for (int i = 0; i < numSignProps; i++)
-                    {
-                        sign.m_destinationMeshObject[i] = new GameObject(position + i.ToString() + "destText");
-                        sign.m_destinationMesh[i] = sign.m_destinationMeshObject[i].AddComponent<TextMesh>();
-
-                        sign.m_destinationMesh[i].transform.position = position;
-                        sign.m_destinationMesh[i].transform.parent = sign.m_sign.transform;
-
-                        sign.m_destinationMesh[i].transform.position = position;
-                        sign.m_destinationMesh[i].transform.Rotate(0, (-1 * Mathf.Rad2Deg * sign.angle) + 270 + signPropInfo.angleOffset, 0);
-                    }
-
-                    if (sign.m_routePrefix != null)
-                    {
-                        sign.m_shieldMesh.transform.position = position;
-
-                        //TODO: Bind the elevation of the mesh to the text z offset
-                        sign.m_shieldMesh.transform.position += (Vector3.up * (0.5f));
-                        sign.m_shieldMesh.transform.localScale = new Vector3(0.18f, 0.18f, 0.18f);
-
-                        sign.m_numMesh.transform.position = position;
-                        sign.m_numMesh.transform.position = sign.m_shieldObject.GetComponent<Renderer>().bounds.center;
-
-                        sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
-                        sign.m_shieldMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * sign.angle) + 270 + signPropInfo.angleOffset, 0);
-
-                        sign.m_shieldMesh.transform.localPosition += new Vector3(0.2f, 6.6f, -5.6f);
-
-                        sign.m_numMesh.transform.parent = sign.m_shieldObject.transform;
-
-                    }
-
-
-                    Material material = m_signPropDict[signPropType].m_material;
-                    if( sign.useTextureOverride)
-                    {
-                        Texture2D texture = material.mainTexture as Texture2D;
-                        material = Instantiate(m_signPropDict[signPropType].m_material) as Material;
-                        Texture2D texCopy = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
-                        texCopy.SetPixels(texture.GetPixels());
-
-                        TextureSignPropInfo signPropTextureInfo = SignPropConfig.texturePropInfoDict[signPropType];
-                        for(int i = 0; i < signPropTextureInfo.numTextures; i++)
-                        {
-                            string textureString = sign.textureOverrides[i];
-                            if (textureString!= null && textureString != RouteManager.NONE)
-                            {
-                                Texture2D otherTexture = SpriteUtils.mTextureStore[signPropType].mTextureRefs[(i+1).ToString()][textureString];
-                                for (int j = 0; j < otherTexture.width; j++)
-                                {
-                                    for (int k = 0; k < otherTexture.height; k++)
-                                    {
-                                        texCopy.SetPixel((int)signPropTextureInfo.drawAreas[i].x + j, (int)signPropTextureInfo.drawAreas[i].yMax - k, otherTexture.GetPixel(j,k));
-                                    }
-                                }
-                            }
-                        }
-                        texCopy.Apply();
-                        material.mainTexture = texCopy;                       
-                    }
-
-                    sign.m_sign.GetComponent<Renderer>().material = material;
-                    //TODO: Make mesh size dependent on text size
-                    sign.m_sign.mesh = m_signPropDict[signPropType].m_mesh;
-                    sign.m_sign.transform.position = position;
-
-                    if (sign.useTextureOverride)
-                    {
-                        continue;
-                    }
-
-                    if (sign.m_routePrefix != null)
-                    {
-                        RouteShieldInfo shieldInfo = RouteShieldConfig.Instance().GetRouteShieldInfo(sign.m_routePrefix);
-                        Material mat = SpriteUtils.mSpriteStore[shieldInfo.textureName];
-                        sign.m_shieldObject.GetComponent<Renderer>().material = mat;
-
-                        //TODO: Make mesh size dependent on text size
-                        sign.m_shieldMesh.mesh = MeshUtils.CreateRectMesh(mat.mainTexture.width, mat.mainTexture.height);
-                        sign.m_shieldMesh.transform.position = position;
-
-                        //TODO: Bind the elevation of the mesh to the text z offset
-                        sign.m_shieldMesh.transform.position += (Vector3.up * (0.5f));
-                        sign.m_shieldMesh.transform.localScale = signPropInfo.shieldScale;
-                        sign.m_shieldObject.GetComponent<Renderer>().sortingOrder = 1000;
-
-                        sign.m_numMesh.anchor = TextAnchor.MiddleCenter;
-                        sign.m_numMesh.font = FontUtils.m_fontStore.ContainsKey("Highway Gothic") ? FontUtils.m_fontStore["Highway Gothic"] : districtManager.m_properties.m_areaNameFont.baseFont;
-                        sign.m_numMesh.GetComponent<Renderer>().material = sign.m_numMesh.font.material;
-                        if (ShaderUtils.m_shaderStore.ContainsKey("font"))
-                        {
-                            sign.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["font"];
-                        }
-                        else
-                        {
-                            sign.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["fallback"];
-                        }
-                        //TODO: Tie the font size to the font size option
-                        sign.m_numMesh.fontSize = 50;
-                        sign.m_numMesh.transform.position = position;
-                        sign.m_numMesh.transform.parent = sign.m_shieldObject.transform;
-
-                        sign.m_numMesh.transform.position = sign.m_shieldObject.GetComponent<Renderer>().bounds.center;
-                        //Just a hack, to make sure the text actually shows up above the shield
-                        sign.m_numMesh.offsetZ = 0.01f;
-                        //TODO: Definitely get a map of the texture to the required text offsets ds
-                        sign.m_numMesh.transform.localPosition += (Vector3.up * shieldInfo.upOffset);
-                        sign.m_numMesh.transform.localPosition += (Vector3.left * shieldInfo.leftOffset);
-                        //TODO: Figure out a better ratio for route markers
-                        sign.m_numMesh.transform.localScale = new Vector3(shieldInfo.textScale, shieldInfo.textScale, shieldInfo.textScale);
-                        sign.m_numMesh.GetComponent<Renderer>().material.color = shieldInfo.textColor;
-                        sign.m_numMesh.text = sign.m_route.ToString();
-
-                        sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
-
-                        sign.m_shieldMesh.transform.localPosition = signPropInfo.shieldOffset[0];
-                    }
-
-
-                    string[] destinationStrings = sign.m_destination.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
-
-                    for (int i = 0; i < numSignProps; i++)
-                    {
-                        sign.m_destinationMesh[i].anchor = TextAnchor.MiddleCenter;
-                        sign.m_destinationMesh[i].font = FontUtils.m_fontStore.ContainsKey(signPropInfo.fontType) ? FontUtils.m_fontStore[signPropInfo.fontType] : districtManager.m_properties.m_areaNameFont.baseFont;
-                        sign.m_destinationMesh[i].font.material.SetColor("Text Color", Color.white);
-
-                        if (ShaderUtils.m_shaderStore.ContainsKey("font"))
-                        {
-                            sign.m_destinationMesh[i].font.material.shader = ShaderUtils.m_shaderStore["font"];
-                        }
-                        else
-                        {
-                            sign.m_destinationMesh[i].font.material.shader = ShaderUtils.m_shaderStore["fallback"];
-                        }
-
-                        sign.m_destinationMesh[i].GetComponent<Renderer>().material = sign.m_destinationMesh[i].font.material;
-                        //TODO: Tie the font size to the font size option
-                        sign.m_destinationMesh[i].fontSize = 50;
-                        sign.m_destinationMesh[i].transform.position = position;
-                        sign.m_destinationMesh[i].transform.parent = sign.m_sign.transform;
-
-                        sign.m_destinationMesh[i].transform.position = position;
-                        //Just a hack, to make sure the text actually shows up above the shield
-                        sign.m_destinationMesh[i].offsetZ = 0.001f;
-                        //TODO: Definitely get a map of the texture to the required text offsets 
-                        //TODO: Figure out a better ratio for route markers
-                        sign.m_destinationMesh[i].transform.localScale = signPropInfo.textScale;
-                        String msgString = signPropInfo.isDoubleGantry ? destinationStrings[i] : sign.m_destination;
-                        sign.m_destinationMesh[i].text = msgString.Replace("\\n", "\n");
-
-                        sign.m_destinationMesh[i].transform.localPosition = sign.m_routePrefix == null ? signPropInfo.textOffsetNoSign[i] : signPropInfo.textOffsetSign[i];
-                    }
-
-                }
+                DrawSignProps(forceTextureUpdates, districtManager);
 
                 foreach (DynamicSignContainer sign in RouteManager.instance.m_dynamicSignList)
                 {
@@ -500,7 +300,7 @@ namespace MarkARoute.Managers
                     sign.m_messageTextMesh.anchor = TextAnchor.MiddleLeft;
                     sign.m_messageTextMesh.font = FontUtils.m_fontStore.ContainsKey("Electronic Highway Sign") ? FontUtils.m_fontStore["Electronic Highway Sign"] : districtManager.m_properties.m_areaNameFont.baseFont;
 
-                    if( ShaderUtils.m_shaderStore.ContainsKey("font"))
+                    if (ShaderUtils.m_shaderStore.ContainsKey("font"))
                     {
                         sign.m_messageTextMesh.font.material.shader = ShaderUtils.m_shaderStore["font"];
                     }
@@ -535,6 +335,217 @@ namespace MarkARoute.Managers
             }
         }
 
+        private void DrawSignProps(bool forceTextureUpdates, DistrictManager districtManager)
+        {
+
+            foreach (SignContainer sign in RouteManager.instance.m_signList)
+            {
+                Vector3 position = new Vector3(sign.x, sign.y, sign.z);
+                string signPropType = (sign.m_exitNum == null || !m_signPropDict.ContainsKey(sign.m_exitNum)) ? "hwysign" : sign.m_exitNum;
+                SignPropInfo signPropInfo = SignPropConfig.signPropInfoDict[signPropType];
+                int numSignProps = signPropInfo.isDoubleGantry ? 2 : 1;
+
+                if (sign.m_signObj != null)
+                {
+                    if (forceTextureUpdates)
+                    {
+                        MaybeDrawSignTexture(sign, signPropType);
+                    }
+                    continue;
+                }
+
+                if (sign.m_routePrefix != null)
+                {
+                    sign.m_shieldObject = new GameObject(position + "shield");
+                    sign.m_shieldObject.AddComponent<MeshRenderer>();
+                    sign.m_shieldMesh = sign.m_shieldObject.AddComponent<MeshFilter>();
+                    GameObject numTextObject = new GameObject(position + "text");
+                    numTextObject.transform.parent = sign.m_shieldObject.transform;
+                    numTextObject.AddComponent<MeshRenderer>();
+                    numTextObject.GetComponent<MeshRenderer>().sortingOrder = 1001;
+                    sign.m_numMesh = numTextObject.AddComponent<TextMesh>();
+                }
+
+                sign.m_signObj = new GameObject(position + "sign");
+                sign.m_signObj.AddComponent<MeshRenderer>();
+                sign.m_sign = sign.m_signObj.AddComponent<MeshFilter>();
+
+                sign.m_destinationMeshObject = new GameObject[numSignProps];
+                sign.m_destinationMesh = new TextMesh[numSignProps];
+
+                //Todo: move the route info back to the renderingManager( or move the rendering position here?? )
+                sign.m_sign.transform.position = position;
+                sign.m_sign.transform.Rotate(0, -1 * Mathf.Rad2Deg * sign.angle, 0);
+
+                for (int i = 0; i < numSignProps; i++)
+                {
+                    if (!string.IsNullOrEmpty(sign.m_destination))
+                    {
+                        sign.m_destinationMeshObject[i] = new GameObject(position + i.ToString() + "destText");
+                        sign.m_destinationMesh[i] = sign.m_destinationMeshObject[i].AddComponent<TextMesh>();
+
+                        sign.m_destinationMesh[i].transform.position = position;
+                        sign.m_destinationMesh[i].transform.parent = sign.m_sign.transform;
+
+                        sign.m_destinationMesh[i].transform.position = position;
+                        sign.m_destinationMesh[i].transform.Rotate(0, (-1 * Mathf.Rad2Deg * sign.angle) + 270 + signPropInfo.angleOffset, 0);
+                    }
+                }
+
+                if (sign.m_routePrefix != null)
+                {
+                    sign.m_shieldMesh.transform.position = position;
+
+                    //TODO: Bind the elevation of the mesh to the text z offset
+                    sign.m_shieldMesh.transform.position += (Vector3.up * (0.5f));
+                    sign.m_shieldMesh.transform.localScale = new Vector3(0.18f, 0.18f, 0.18f);
+
+                    sign.m_numMesh.transform.position = position;
+                    sign.m_numMesh.transform.position = sign.m_shieldObject.GetComponent<Renderer>().bounds.center;
+
+                    sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
+                    sign.m_shieldMesh.transform.Rotate(0, (-1 * Mathf.Rad2Deg * sign.angle) + 270 + signPropInfo.angleOffset, 0);
+
+                    sign.m_shieldMesh.transform.localPosition += new Vector3(0.2f, 6.6f, -5.6f);
+
+                    sign.m_numMesh.transform.parent = sign.m_shieldObject.transform;
+
+                }
+
+                MaybeDrawSignTexture(sign, signPropType);
+                //TODO: Make mesh size dependent on text size
+                sign.m_sign.mesh = m_signPropDict[signPropType].m_mesh;
+                sign.m_sign.transform.position = position;
+
+                if (sign.useTextureOverride)
+                {
+                    continue;
+                }
+
+                if (sign.m_routePrefix != null)
+                {
+                    RouteShieldInfo shieldInfo = RouteShieldConfig.Instance().GetRouteShieldInfo(sign.m_routePrefix);
+                    Material mat = SpriteUtils.mSpriteStore[shieldInfo.textureName];
+                    sign.m_shieldObject.GetComponent<Renderer>().material = mat;
+
+                    //TODO: Make mesh size dependent on text size
+                    sign.m_shieldMesh.mesh = MeshUtils.CreateRectMesh(mat.mainTexture.width, mat.mainTexture.height);
+                    sign.m_shieldMesh.transform.position = position;
+
+                    //TODO: Bind the elevation of the mesh to the text z offset
+                    sign.m_shieldMesh.transform.position += (Vector3.up * (0.5f));
+                    sign.m_shieldMesh.transform.localScale = signPropInfo.shieldScale;
+                    sign.m_shieldObject.GetComponent<Renderer>().sortingOrder = 1000;
+
+                    sign.m_numMesh.anchor = TextAnchor.MiddleCenter;
+                    sign.m_numMesh.font = FontUtils.m_fontStore.ContainsKey("Highway Gothic") ? FontUtils.m_fontStore["Highway Gothic"] : districtManager.m_properties.m_areaNameFont.baseFont;
+                    sign.m_numMesh.GetComponent<Renderer>().material = sign.m_numMesh.font.material;
+                    if (ShaderUtils.m_shaderStore.ContainsKey("font"))
+                    {
+                        sign.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["font"];
+                    }
+                    else
+                    {
+                        sign.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["fallback"];
+                    }
+                    //TODO: Tie the font size to the font size option
+                    sign.m_numMesh.fontSize = 50;
+                    sign.m_numMesh.transform.position = position;
+                    sign.m_numMesh.transform.parent = sign.m_shieldObject.transform;
+
+                    sign.m_numMesh.transform.position = sign.m_shieldObject.GetComponent<Renderer>().bounds.center;
+                    //Just a hack, to make sure the text actually shows up above the shield
+                    sign.m_numMesh.offsetZ = 0.01f;
+                    //TODO: Definitely get a map of the texture to the required text offsets ds
+                    sign.m_numMesh.transform.localPosition += (Vector3.up * shieldInfo.upOffset);
+                    sign.m_numMesh.transform.localPosition += (Vector3.left * shieldInfo.leftOffset);
+                    //TODO: Figure out a better ratio for route markers
+                    sign.m_numMesh.transform.localScale = new Vector3(shieldInfo.textScale, shieldInfo.textScale, shieldInfo.textScale);
+                    sign.m_numMesh.GetComponent<Renderer>().material.color = shieldInfo.textColor;
+                    sign.m_numMesh.text = sign.m_route.ToString();
+
+                    sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
+
+                    sign.m_shieldMesh.transform.localPosition = signPropInfo.shieldOffset[0];
+                }
+
+
+                string[] destinationStrings = sign.m_destination.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+                for (int i = 0; i < numSignProps; i++)
+                {
+                    String msgString = signPropInfo.isDoubleGantry ? destinationStrings[i] : sign.m_destination;
+
+                    if (sign.m_destinationMesh[i] != null)
+                    {
+                        sign.m_destinationMesh[i].anchor = TextAnchor.MiddleCenter;
+                        sign.m_destinationMesh[i].font = FontUtils.m_fontStore.ContainsKey(signPropInfo.fontType) ? FontUtils.m_fontStore[signPropInfo.fontType] : districtManager.m_properties.m_areaNameFont.baseFont;
+                        sign.m_destinationMesh[i].font.material.SetColor("Text Color", Color.white);
+
+                        if (ShaderUtils.m_shaderStore.ContainsKey("font"))
+                        {
+                            sign.m_destinationMesh[i].font.material.shader = ShaderUtils.m_shaderStore["font"];
+                        }
+                        else
+                        {
+                            sign.m_destinationMesh[i].font.material.shader = ShaderUtils.m_shaderStore["fallback"];
+                        }
+
+                        sign.m_destinationMesh[i].GetComponent<Renderer>().material = sign.m_destinationMesh[i].font.material;
+                        //TODO: Tie the font size to the font size option
+                        sign.m_destinationMesh[i].fontSize = 50;
+                        sign.m_destinationMesh[i].transform.position = position;
+                        sign.m_destinationMesh[i].transform.parent = sign.m_sign.transform;
+
+                        sign.m_destinationMesh[i].transform.position = position;
+                        //Just a hack, to make sure the text actually shows up above the shield
+                        sign.m_destinationMesh[i].offsetZ = 0.001f;
+                        //TODO: Definitely get a map of the texture to the required text offsets 
+                        //TODO: Figure out a better ratio for route markers
+                        sign.m_destinationMesh[i].transform.localScale = signPropInfo.textScale;
+                        sign.m_destinationMesh[i].text = msgString.Replace("\\n", "\n");
+
+                        sign.m_destinationMesh[i].transform.localPosition = sign.m_routePrefix == null ? signPropInfo.textOffsetNoSign[i] : signPropInfo.textOffsetSign[i];
+                    }
+
+                }
+
+            }
+        }
+
+        private void MaybeDrawSignTexture(SignContainer sign, string signPropType)
+        {
+            Material material = m_signPropDict[signPropType].m_material;
+            if (sign.useTextureOverride)
+            {
+                Texture2D texture = material.mainTexture as Texture2D;
+                material = Instantiate(m_signPropDict[signPropType].m_material) as Material;
+                Texture2D texCopy = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
+                texCopy.SetPixels(texture.GetPixels());
+
+                TextureSignPropInfo signPropTextureInfo = SignPropConfig.texturePropInfoDict[signPropType];
+                for (int i = 0; i < signPropTextureInfo.numTextures; i++)
+                {
+                    string textureString = sign.textureOverrides[i];
+                    if (textureString != null && textureString != RouteManager.NONE && SpriteUtils.mTextureStore[signPropType].mTextureRefs[(i + 1).ToString()].ContainsKey(textureString))
+                    {
+                        Texture2D otherTexture = SpriteUtils.mTextureStore[signPropType].mTextureRefs[(i + 1).ToString()][textureString];
+                        for (int j = 0; j < otherTexture.width; j++)
+                        {
+                            for (int k = 0; k < otherTexture.height; k++)
+                            {
+                                texCopy.SetPixel((int)signPropTextureInfo.drawAreas[i].x + j, (int)signPropTextureInfo.drawAreas[i].yMax - k, otherTexture.GetPixel(j, k));
+                            }
+                        }
+                    }
+                }
+                texCopy.Apply();
+                material.mainTexture = texCopy;
+            }
+
+            sign.m_sign.GetComponent<Renderer>().material = material;
+        }
+
         private void MessageUpdateTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             if (!m_updateDynamicSignFlag)
@@ -547,9 +558,17 @@ namespace MarkARoute.Managers
         /// Forces rendering to update immediately. Use sparingly, as it
         /// can be quite expensive.
         /// </summary>
-        public void ForceUpdate()
+        public void ForceUpdate( bool forceAllUpdates )
         {
-            m_lastCount = -1;
+            if (forceAllUpdates)
+            {
+                RenderText(true);
+            }else
+            {
+                m_lastCount = -1;
+            }
+
         }
+
     }
 }

@@ -11,7 +11,6 @@ namespace MarkARoute.Utils
     class DynamicSignConfig
     {
         private static readonly string FILE_NAME = "MarkARouteVmsStrings.json";
-        private static readonly string ELEMENT_NAME = "MarkARouteVmsItems";
 
         private static readonly List<string> fallbackMsgStrings = new List<string>{ "Eat your vegetables",
                                     "Don't cut back on roads,\nor you'll regret it",

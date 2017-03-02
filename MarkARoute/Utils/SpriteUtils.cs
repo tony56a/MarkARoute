@@ -60,7 +60,7 @@ namespace MarkARoute.Utils
             {
                 return false;
             }
-            Texture2D texture = new Texture2D(2, 2);
+            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32,false);
             FileStream fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
             byte[] imageData = new byte[fileStream.Length];
 
@@ -160,5 +160,26 @@ namespace MarkARoute.Utils
             return true;
         }
         //=========================================================================
+
+        public static bool ExtractAllTextures()
+        {
+            bool spriteSuccess = false;
+            string[] directories = Directory.GetDirectories(FileUtils.GetAltPath(FileUtils.TEXTURES));
+            foreach (string directory in directories)
+            {
+                string[] files = Directory.GetFiles(directory);
+                foreach (string file in files)
+                {
+                    string[] splitValues = file[0] == Path.DirectorySeparatorChar ? file.Substring(1).Split(Path.DirectorySeparatorChar) : file.Split(Path.DirectorySeparatorChar);
+                    string fileName = splitValues[splitValues.Length - 1];
+                    string directoryName = splitValues[splitValues.Length - 2];
+
+                    string fileKey = fileName.Split('.')[0];
+                    spriteSuccess = AddTexture(file, directoryName, fileKey) && spriteSuccess;
+
+                }
+            }
+            return spriteSuccess;
+        }
     }
 }

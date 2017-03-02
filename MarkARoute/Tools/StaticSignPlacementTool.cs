@@ -22,8 +22,8 @@ namespace MarkARoute.Tools
         public void SetPropInfo(string signType)
         {
             this.signType = signType;
+            RenderingManager.instance.ForceUpdate(false);
             base.m_propInfo = RenderingManager.instance.m_signPropDict[signType];
-
         }
 
         protected override void HandleSignPlaced()
@@ -35,7 +35,7 @@ namespace MarkARoute.Tools
             {
                 RouteManager.instance.SetSign(this.m_cachedPosition, this.m_cachedAngle, routePrefix, routeStr, destination, this.signType);
             }
-            RenderingManager.instance.ForceUpdate();
+            RenderingManager.instance.ForceUpdate(false);
             ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
             ToolsModifierControl.SetTool<DefaultTool>();
         }
