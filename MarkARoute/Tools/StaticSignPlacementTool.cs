@@ -23,7 +23,7 @@ namespace MarkARoute.Tools
         {
             this.signType = signType;
             RenderingManager.instance.ForceUpdate(false);
-            base.m_propInfo = RenderingManager.instance.m_signPropDict[signType];
+            base.m_propInfo = PropUtils.m_signPropDict[signType];
         }
 
         protected override void HandleSignPlaced()

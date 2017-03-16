@@ -32,6 +32,10 @@ namespace MarkARoute.Utils
                     m_fontStore[pair.Key] = font[0];
                 }
                 bundle.Unload(false);
+
+                if( SystemInfo.operatingSystem.Contains("Mac") || SystemInfo.operatingSystem.Contains("OS X")){
+                    m_fontStore[pair.Key] = DistrictManager.instance.m_properties.m_areaNameFont.baseFont;
+                }
             }
             
             return true;

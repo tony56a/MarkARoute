@@ -23,7 +23,6 @@ namespace MarkARoute.Patches
         {
             if (ContainerHolder.container != null)
             {
-
                 float size = Mathf.Max(ContainerHolder.container.m_sign.mesh.bounds.extents.x, ContainerHolder.container.m_sign.mesh.bounds.extents.z);
                 ++ToolManager.instance.m_drawCallData.m_overlayCalls;
                 RenderManager.instance.OverlayEffect.DrawCircle(RenderManager.instance.CurrentCameraInfo, toolColor, ContainerHolder.container.pos, size, ContainerHolder.container.pos.y - 100f, ContainerHolder.container.pos.y + 100f, true, false);
@@ -64,18 +63,13 @@ namespace MarkARoute.Patches
             }
             return true;
         }
+
     }
 
     [HarmonyPatch(typeof(BulldozeTool))]
     [HarmonyPatch("OnToolUpdate")]
     public class BulldozerToolPatch
     {
-
-        /*static void RenderOverlay(RenderManager.CameraInfo cameraInfo, SignContainer container)
-        {
-
-           
-        }*/
 
         static bool RaycastSign(Ray currentPosition, out SignContainer returnValue)
         {

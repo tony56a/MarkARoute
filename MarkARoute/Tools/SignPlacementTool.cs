@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace MarkARoute.Tools
 {
-    abstract class SignPlacementTool : DefaultTool, IEventSubscriber
+    abstract class SignPlacementTool : DefaultTool
     {
         public float m_angle;
         public Texture2D m_brush;
@@ -149,11 +149,12 @@ namespace MarkARoute.Tools
 
         protected override void OnToolUpdate()
         {
-            PropInfo propInfo = this.m_propInfo;
-            if (propInfo == null)
+            if (this.m_propInfo == null)
+            {
                 return;
+            }
 
-            if(Input.GetKey(KeyCode.Mouse1))
+            if (Input.GetKey(KeyCode.Mouse1))
             {
                 float axis = Input.GetAxis("Mouse X");
                 if( Math.Abs(axis) > 0.1 ) {
@@ -204,7 +205,7 @@ namespace MarkARoute.Tools
                     ushort id = Singleton<PropManager>.instance.m_props.NextFreeItem(ref r);
                     this.m_mousePosition = output.m_hitPos;
                     this.m_placementErrors = ToolErrors.None;
-
+                    PropInstance instance = new PropInstance();
                 }
                 else
                     this.m_placementErrors = ToolBase.ToolErrors.RaycastFailed;
@@ -218,18 +219,6 @@ namespace MarkARoute.Tools
         public override ToolBase.ToolErrors GetErrors()
         {
             return ToolErrors.None;
-        }
-
-        public void onReceiveEvent(string eventName, object eventData)
-        {
-            switch (eventName)
-            {
-                case "setAngle":
-                    this.m_angle = (float)eventData;
-                    break;
-                default:
-                    break;
-            }
         }
     }
 }

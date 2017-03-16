@@ -6,80 +6,38 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using MarkARoute.Tools;
+using MarkARoute.UI.Utils;
 
 namespace MarkARoute.UI
 {
-    class TextureSelectOption
+
+    abstract class AddSignPanel : UIPanel,IEventSubscriber
     {
-        public UILabel textureSelectLabel;
-        public UIDropDown m_textureDropdown;
-
-        public bool isHidden
-        {
-            get
-            {
-                return this.m_textureDropdown.isVisible;
-            }
-            set
-            {
-                this.textureSelectLabel.isVisible = !value;
-                this.m_textureDropdown.isVisible = !value;
-            
-            }
-        }
-
-        public static TextureSelectOption CreateOptions(string labelStr, UIComponent parent, ref float yPos)
-        {
-            TextureSelectOption retVal = new TextureSelectOption();
-
-            retVal.textureSelectLabel = parent.AddUIComponent<UILabel>();
-            retVal.textureSelectLabel.text = labelStr;
-            retVal.textureSelectLabel.autoSize = true;
-            retVal.textureSelectLabel.size = new Vector2(parent.width - UIUtils.UIPadding.left - UIUtils.UIPadding.right, 25);
-            retVal.textureSelectLabel.padding = UIUtils.UIPadding;
-            retVal.textureSelectLabel.relativePosition = new Vector2(UIUtils.UIPadding.left, yPos);
-            retVal.textureSelectLabel.textAlignment = UIHorizontalAlignment.Left;
-            retVal.textureSelectLabel.verticalAlignment = UIVerticalAlignment.Middle;
-
-            yPos += (retVal.textureSelectLabel.height + UIUtils.UIPadding.top);
-
-            retVal.m_textureDropdown = UIUtils.CreateDropDown(parent, new Vector2(((parent.width - UIUtils.UIPadding.left - 2 * UIUtils.UIPadding.right)), 25));
-            retVal.m_textureDropdown.selectedIndex = 0;
-            retVal.m_textureDropdown.autoListWidth = true;
-            retVal.m_textureDropdown.relativePosition = new Vector3(UIUtils.UIPadding.left, yPos);
-
-            yPos += (retVal.m_textureDropdown.height + UIUtils.UIPadding.top);
-            return retVal;
-        }
-    }
-
-    class AddSignPanel : UIPanel,IEventSubscriber
-    {
-        private const string OVERLAY = "Overlay";
-        private const string TEXTURE_REPLACE = "Texture replace";
+        protected const string OVERLAY = "Overlay";
+        protected const string TEXTURE_REPLACE = "Texture replace";
 
         protected RectOffset m_UIPadding = new RectOffset(5, 5, 5, 5);
 
         private TitleBar m_panelTitle;
-        private UIDropDown m_routeTypeDropdown;
-        private UITextField m_routeStrField;
+        protected UIDropDown m_routeTypeDropdown;
+        protected UITextField m_routeStrField;
         private UILabel m_routeLabel;
 
-        private UITextField[] m_destinationField = new UITextField[2];
+        protected UITextField[] m_destinationField = new UITextField[2];
         private UILabel m_destinationLabel;
 
         private UILabel m_propTypeLabel;
-        private UIDropDown m_propTypeDropDown;
+        protected UIDropDown m_propTypeDropDown;
 
-        private UILabel m_propRenderingTypeLabe;
-        private UIDropDown m_propRenderingTypeDropdonw;
+        private UILabel m_propRenderingTypeLabel;
+        protected UIDropDown m_propRenderingTypeDropdown;
         private UIButton nameRoadButton;
 
         private float yCursor;
         private float bottomYCursor;
         private float bottomTextureYCursor;
 
-        private List<TextureSelectOption> mTextureSelectOptions = new List<TextureSelectOption>();
+        protected List<TextureSelectOption> mTextureSelectOptions = new List<TextureSelectOption>();
 
         public StaticSignPlacementTool mSignPlacementTool;
 
@@ -112,27 +70,27 @@ namespace MarkARoute.UI
         {
             yCursor = m_panelTitle.height + m_UIPadding.top;
 
-            m_propRenderingTypeLabe = this.AddUIComponent<UILabel>();
-            m_propRenderingTypeLabe.textScale = 1f;
-            m_propRenderingTypeLabe.size = new Vector3(m_UIPadding.left, m_panelTitle.height + m_UIPadding.bottom);
-            m_propRenderingTypeLabe.textColor = new Color32(180, 180, 180, 255);
-            m_propRenderingTypeLabe.relativePosition = new Vector3(m_UIPadding.left, yCursor);
-            m_propRenderingTypeLabe.textAlignment = UIHorizontalAlignment.Left;
-            m_propRenderingTypeLabe.text = "Sign Texture method";
+            m_propRenderingTypeLabel = this.AddUIComponent<UILabel>();
+            m_propRenderingTypeLabel.textScale = 1f;
+            m_propRenderingTypeLabel.size = new Vector3(m_UIPadding.left, m_panelTitle.height + m_UIPadding.bottom);
+            m_propRenderingTypeLabel.textColor = new Color32(180, 180, 180, 255);
+            m_propRenderingTypeLabel.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_propRenderingTypeLabel.textAlignment = UIHorizontalAlignment.Left;
+            m_propRenderingTypeLabel.text = "Sign Texture method";
 
-            yCursor += m_propRenderingTypeLabe.height + m_UIPadding.bottom;
+            yCursor += m_propRenderingTypeLabel.height + m_UIPadding.bottom;
 
-            m_propRenderingTypeDropdonw = UIUtils.CreateDropDown(this, new Vector2(((this.width - m_UIPadding.left - 2 * m_UIPadding.right)), 25));
+            m_propRenderingTypeDropdown = UIUtils.CreateDropDown(this, new Vector2(((this.width - m_UIPadding.left - 2 * m_UIPadding.right)), 25));
             foreach (String replacementType in new List<String> { OVERLAY,TEXTURE_REPLACE } )
             {
-                m_propRenderingTypeDropdonw.AddItem(replacementType);
+                m_propRenderingTypeDropdown.AddItem(replacementType);
             }
-            m_propRenderingTypeDropdonw.selectedIndex = 0;
-            m_propRenderingTypeDropdonw.autoListWidth = true;
-            m_propRenderingTypeDropdonw.relativePosition = new Vector3(m_UIPadding.left, yCursor);
-            m_propRenderingTypeDropdonw.eventSelectedIndexChanged += M_propTextTypeDropdown_eventSelectedIndexChanged;
+            m_propRenderingTypeDropdown.selectedIndex = 0;
+            m_propRenderingTypeDropdown.autoListWidth = true;
+            m_propRenderingTypeDropdown.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_propRenderingTypeDropdown.eventSelectedIndexChanged += M_propTextTypeDropdown_eventSelectedIndexChanged;
 
-            yCursor += m_propRenderingTypeDropdonw.height + m_UIPadding.bottom;
+            yCursor += m_propRenderingTypeDropdown.height + m_UIPadding.bottom;
 
             m_propTypeLabel = this.AddUIComponent<UILabel>();
             m_propTypeLabel.textScale = 1f;
@@ -142,12 +100,12 @@ namespace MarkARoute.UI
             m_propTypeLabel.textAlignment = UIHorizontalAlignment.Left;
             m_propTypeLabel.text = "Sign prop type";
 
-            yCursor += m_propRenderingTypeDropdonw.height + m_UIPadding.bottom;
+            yCursor += m_propRenderingTypeDropdown.height + m_UIPadding.bottom;
             
             m_propTypeDropDown = UIUtils.CreateDropDown(this, new Vector2(((this.width - m_UIPadding.left - 2 * m_UIPadding.right)), 25));
             //TODO: Replace with Random namer values
-            var keys = RenderingManager.instance.m_signPropDict.Keys;
-            foreach (String signPropName in RenderingManager.instance.m_signPropDict.Keys.Where(key => SignPropConfig.signPropInfoDict.ContainsKey(key)))
+            var keys = PropUtils.m_signPropDict.Keys;
+            foreach (String signPropName in PropUtils.m_signPropDict.Keys.Where(key => SignPropConfig.signPropInfoDict.ContainsKey(key)))
             {
                 m_propTypeDropDown.AddItem(signPropName);
             }
@@ -240,79 +198,11 @@ namespace MarkARoute.UI
             this.height = yCursor;
         }
 
-        /// <summary>
-        /// Gets the colour from the panel and sets it to be rendered/saved
-        /// </summary>
-        private void SetRoadData()
-        {
-            switch (m_propRenderingTypeDropdonw.selectedValue)
-            {
-                case OVERLAY:
-                    mSignPlacementTool.useTextureReplace = false;
-                    if (String.IsNullOrEmpty(m_routeStrField.text))
-                    {
-                        mSignPlacementTool.routeStr = null;
-                        mSignPlacementTool.routePrefix = null;
-                    }
-                    else
-                    {
-                        mSignPlacementTool.routeStr = m_routeStrField.text;
-                        mSignPlacementTool.routePrefix = m_routeTypeDropdown.selectedValue;
-                    }
-                    mSignPlacementTool.destination = m_destinationField[0].text + '\n' + m_destinationField[1].text;
-                    mSignPlacementTool.SetPropInfo(m_propTypeDropDown.selectedValue);
-                    break;
-                case TEXTURE_REPLACE:
-                    mSignPlacementTool.useTextureReplace = true;
-                    List<string> textureReplaceStrings = new List<string>();
-                    foreach(TextureSelectOption option in mTextureSelectOptions)
-                    {
-                        textureReplaceStrings.Add(option.m_textureDropdown.selectedValue);
-                    }
-                    mSignPlacementTool.textureReplaceStrings = textureReplaceStrings;
-                    mSignPlacementTool.SetPropInfo(m_propTypeDropDown.selectedValue);
-                    break;
-            }
-          
-            ToolsModifierControl.toolController.CurrentTool = mSignPlacementTool;
-            ToolsModifierControl.SetTool<StaticSignPlacementTool>();
-            EventBusManager.Instance().Publish("closeAll", null);
-        }
-
-        public void onReceiveEvent(string eventName, object eventData)
-        {
-            string message = eventData as string;
-            switch (eventName)
-            {
-                case "updateroutepaneltext":
-                    if (message != null)
-                    {
-
-                        string[] routeValues = message.Split('/');
-                        int routeType = 0;
-                        for (int i = 0; i < m_routeTypeDropdown.items.Length; i++)
-                        {
-                            if (m_routeTypeDropdown.items[i].ToLower() == routeValues[0].ToLower())
-                            {
-                                routeType = i;
-                                break;
-                            }
-                        }
-                        m_routeTypeDropdown.selectedIndex = routeType;
-                        m_routeStrField.text = routeValues[1];
-                    }
-                    break;
-                case "closeAll":
-                    Hide();
-                    break;
-                default:
-                    break;
-            }
-        }
+        public abstract void SetRoadData();
 
         private void M_propTextTypeDropdown_eventSelectedIndexChanged(UIComponent component, int value)
         {
-            switch (m_propRenderingTypeDropdonw.selectedValue)
+            switch (m_propRenderingTypeDropdown.selectedValue)
             {
                 case TEXTURE_REPLACE:
                     m_routeLabel.Hide();
@@ -327,8 +217,8 @@ namespace MarkARoute.UI
                         option.isHidden = true;
 
                     }
-                    if (SignPropConfig.texturePropInfoDict.ContainsKey(m_propTypeDropDown.selectedValue)){
-                        TextureSignPropInfo info = SignPropConfig.texturePropInfoDict[m_propTypeDropDown.selectedValue];
+                    if (TextureReplaceConfig.texturePropInfoDict.ContainsKey(m_propTypeDropDown.selectedValue)){
+                        TextureReplaceConfig.TextureSignPropInfo info = TextureReplaceConfig.texturePropInfoDict[m_propTypeDropDown.selectedValue];
                         for (int i = 0; i <info.numTextures; i++)
                         {
                             mTextureSelectOptions[i].isHidden = false;
@@ -374,12 +264,12 @@ namespace MarkARoute.UI
 
         private void M_propTypeDropDown_eventSelectedIndexChanged(UIComponent component, int value)
         {
-            m_propRenderingTypeDropdonw.selectedIndex = 0;
-            m_propRenderingTypeDropdonw.items = null;
-            m_propRenderingTypeDropdonw.AddItem("Overlay");
-            if (SignPropConfig.texturePropInfoDict.ContainsKey(m_propTypeDropDown.selectedValue))
+            m_propRenderingTypeDropdown.selectedIndex = 0;
+            m_propRenderingTypeDropdown.items = null;
+            m_propRenderingTypeDropdown.AddItem("Overlay");
+            if (TextureReplaceConfig.texturePropInfoDict.ContainsKey(m_propTypeDropDown.selectedValue))
             {
-                m_propRenderingTypeDropdonw.AddItem("Texture replace");
+                m_propRenderingTypeDropdown.AddItem("Texture replace");
             }
 
         }
@@ -403,6 +293,38 @@ namespace MarkARoute.UI
             if (eventParam.keycode == KeyCode.KeypadEnter || eventParam.keycode == KeyCode.Return)
             {
                 SetRoadData();
+            }
+        }
+
+
+        public void onReceiveEvent(string eventName, object eventData)
+        {
+            string message = eventData as string;
+            switch (eventName)
+            {
+                case "updateroutepaneltext":
+                    if (message != null)
+                    {
+
+                        string[] routeValues = message.Split('/');
+                        int routeType = 0;
+                        for (int i = 0; i < m_routeTypeDropdown.items.Length; i++)
+                        {
+                            if (m_routeTypeDropdown.items[i].ToLower() == routeValues[0].ToLower())
+                            {
+                                routeType = i;
+                                break;
+                            }
+                        }
+                        m_routeTypeDropdown.selectedIndex = routeType;
+                        m_routeStrField.text = routeValues[1];
+                    }
+                    break;
+                case "closeAll":
+                    Hide();
+                    break;
+                default:
+                    break;
             }
         }
     }

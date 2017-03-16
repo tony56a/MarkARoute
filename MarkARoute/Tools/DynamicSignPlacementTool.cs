@@ -19,7 +19,7 @@ namespace MarkARoute.Tools
         public void SetPropInfo()
         {
             RenderingManager.instance.ForceUpdate(false);
-            RenderingManager.instance.m_signPropDict.TryGetValue("electronic_sign_gantry", out this.m_propInfo);
+            PropUtils.m_signPropDict.TryGetValue("electronic_sign_gantry", out this.m_propInfo);
         }
 
         protected override void HandleSignPlaced()

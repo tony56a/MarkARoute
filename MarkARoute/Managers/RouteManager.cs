@@ -11,7 +11,9 @@ namespace MarkARoute.Managers
 {
     class RouteManager : Singleton<RouteManager>
     {
-        public static string NONE = "None";
+        public const string NONE = "None";
+        public const string VANILLA = "Default";
+
         /// <summary>
         /// Dictionary of routes already used, to the number of segments that use that route
         /// </summary> 
@@ -22,9 +24,16 @@ namespace MarkARoute.Managers
         /// </summary>
         public Dictionary<ushort, RouteContainer> m_routeDict = new Dictionary<ushort, RouteContainer>();
 
+        /// <summary>
+        /// List of sign and dynamic sign objects
+        /// </summary>
         public List<SignContainer> m_signList = new List<SignContainer>(0);
-
         public List<DynamicSignContainer> m_dynamicSignList = new List<DynamicSignContainer>();
+
+        /// <summary>
+        /// Dict of sign containers for overwritting vanilla signs
+        /// </summary>
+        public Dictionary<ushort, OverrideSignContainer> m_overrideSignDict = new Dictionary<ushort, OverrideSignContainer>();
 
         private void DecrementRoadRouteCounter(string routeStr)
         {
@@ -110,27 +119,55 @@ namespace MarkARoute.Managers
         public void SetSign(Vector3 position, float angle, string routePrefix, string route, string destination, string signType)
         {
             SignContainer signContainer = new SignContainer(position, angle, routePrefix, route, destination);
-            signContainer.m_exitNum = signType;
-
-            m_signList.Add(signContainer);
-            EventBusManager.Instance().Publish("forceUpdateSigns", null);
-
+            SetSign(signType, signContainer);
+        
         }
 
-        internal void SetSign(Vector3 position, float angle, string signType, List<string> textureReplaceStrings)
+        public void SetSign(Vector3 position, float angle, string signType, List<string> textureReplaceStrings)
         {
             SignContainer signContainer = new SignContainer(position, angle, textureReplaceStrings);
+            SetSign(signType, signContainer);
+        }
+
+        private void SetSign(string signType, SignContainer signContainer)
+        {
+            signContainer.terrainY = TerrainManager.instance.SampleDetailHeight(signContainer.pos);
             signContainer.m_exitNum = signType;
             m_signList.Add(signContainer);
             EventBusManager.Instance().Publish("forceUpdateSigns", null);
         }
-
 
         public void DeleteSign(SignContainer container)
         {
             GameObject.Destroy(container.m_signObj);
             m_signList.Remove(container);
             EventBusManager.Instance().Publish("forceUpdateSigns", null);
+        }
+
+        public void SetOverrideSign(ushort segmentId, string signType , List<string> textureReplaceStrings, bool shouldLoadTexture=true)
+        {
+            OverrideSignContainer container;
+            switch (signType)
+            {
+                case VANILLA:
+                    m_overrideSignDict.Remove(segmentId);
+                    break;
+                case NONE:
+                    container = new OverrideSignContainer(segmentId, signType);
+                    m_overrideSignDict[segmentId] = container;
+                    break;
+                default:
+                    container = new OverrideSignContainer(segmentId, signType, textureReplaceStrings);
+                    if (shouldLoadTexture)
+                    {
+                        container.m_mainTexture = PropUtils.ReplaceTexture(container.m_exitNum, container.textureOverrides);
+                    }
+                    m_overrideSignDict[segmentId] = container;
+
+                    break;
+            }
+          
+          
         }
 
         public void SetRoute(ushort segmentId, string routePrefix, string route, string oldRouteStr = null)
@@ -163,7 +200,7 @@ namespace MarkARoute.Managers
 
                     routeContainer.m_numMesh = numTextObject.AddComponent<TextMesh>();
                 }
-
+                
 
                 string routeStr = routePrefix + '/' + route;
                 if (!m_usedRoutes.ContainsKey(routeStr))
@@ -191,9 +228,22 @@ namespace MarkARoute.Managers
             EventBusManager.Instance().Publish("forceupdateroutes", null);
         }
 
-        public RouteContainer[] SaveRoutes()
+        public RouteContainer[] GetRouteMarkers()
         {
             return new List<RouteContainer>(m_routeDict.Values).ToArray();
+        }
+
+        public OverrideSignContainer[] GetOverrideSigns()
+        {
+            return new List<OverrideSignContainer>(m_overrideSignDict.Values).ToArray();
+        }
+
+        public void LoadOverrideTextures()
+        {
+            foreach(OverrideSignContainer container in m_overrideSignDict.Values)
+            {
+                container.m_mainTexture = PropUtils.ReplaceTexture(container.m_exitNum, container.textureOverrides);
+            }
         }
 
         public void Load(RouteContainer[] routeNames)
@@ -239,7 +289,6 @@ namespace MarkARoute.Managers
                     else
                     {
                         SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_destination, sign.m_exitNum);
-
                     }
                 }
             }
@@ -256,6 +305,16 @@ namespace MarkARoute.Managers
             }
         }
 
+        public void LoadOverrideSigns(OverrideSignContainer[] overrideSignContainers)
+        {
+            if (overrideSignContainers != null)
+            {
+                foreach (OverrideSignContainer sign in overrideSignContainers)
+                {
+                    SetOverrideSign(sign.m_segment, sign.m_exitNum, sign.textureOverrides, shouldLoadTexture : false);
+                }
+            }
+        }
     }
 
     [Serializable]
@@ -315,6 +374,10 @@ namespace MarkARoute.Managers
         [XmlElement(IsNullable = true)]
         public string extras = null;
 
+        //Current terrain height, adjust as needed
+        [NonSerialized]
+        public float terrainY = 0;
+
         [NonSerialized]
         public Vector3 pos = new Vector3();
 
@@ -365,6 +428,37 @@ namespace MarkARoute.Managers
         // Stub constructor to get compiler to stop complaining about child objects
         public SignContainer(){}
 
+    }
+
+    [Serializable]
+    public class OverrideSignContainer : SignContainer
+    {
+
+        public ushort m_segment;
+
+        [NonSerialized]
+        public Material m_mainTexture;
+
+        [NonSerialized]
+        public List<Mesh> m_meshs;
+        [NonSerialized]
+        public List<Material>  m_materials;
+
+        public OverrideSignContainer(ushort segment, string signType)
+        {
+            m_segment = segment;
+            useTextureOverride = true;
+            this.m_exitNum = signType;
+            textureOverrides = new List<string>();
+        }
+
+        public OverrideSignContainer(ushort segment,string signType, List<string> textureOverrideStrings)
+        {
+            m_segment = segment;
+            useTextureOverride = true;
+            this.m_exitNum = signType;
+            textureOverrides = textureOverrideStrings;
+        }
     }
 
     [Serializable]

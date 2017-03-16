@@ -98,9 +98,8 @@
     <Compile Include="LitJson\JsonWriter.cs" />
     <Compile Include="LitJson\Lexer.cs" />
     <Compile Include="LitJson\ParserToken.cs" />
-    <Compile Include="Managers\FileMonitoringManager.cs" />
     <Compile Include="Patches\BulldozerToolPatch.cs" />
-    <Compile Include="ThreadingMonitor.cs" />
+    <Compile Include="Patches\NetLaneRenderPatch.cs" />
     <Compile Include="Managers\EventBusManager.cs" />
     <Compile Include="Managers\RenderingManager.cs" />
     <Compile Include="Managers\RouteManager.cs" />
@@ -108,41 +107,42 @@
     <Compile Include="MarkARouteMod.cs" />
     <Compile Include="MarkARouteOptions.cs" />
     <Compile Include="MarkARouteSerializer.cs" />
+    <Compile Include="Patches\NetManagerPatch.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tools\DynamicSignPlacementTool.cs" />
     <Compile Include="Tools\RoadSelectorTool.cs" />
     <Compile Include="Tools\SignDeletionTool.cs" />
+    <Compile Include="Tools\SignOverrideSelectorTool.cs" />
     <Compile Include="Tools\SignPlacementTool.cs" />
     <Compile Include="Tools\StaticSignPlacementTool.cs" />
+    <Compile Include="UI\AddNewSignPanel.cs" />
+    <Compile Include="UI\AddOverrideSignPanel.cs" />
     <Compile Include="UI\AddSignPanel.cs" />
-    <Compile Include="UI\AngleDialog.cs" />
     <Compile Include="UI\MainPanel.cs" />
     <Compile Include="UI\ModPanel.cs" />
     <Compile Include="UI\RouteNamePanel.cs" />
-    <Compile Include="UI\SliderDialog.cs" />
-    <Compile Include="UI\TitleBar.cs" />
-    <Compile Include="UI\UIFastList.cs" />
-    <Compile Include="UI\UIUtils.cs" />
-    <Compile Include="UI\UsedRouteRowItem.cs" />
-    <Compile Include="UI\UsedRoutesPanel.cs" />
+    <Compile Include="UI\Utils\TextureSelectOption.cs" />
+    <Compile Include="UI\Utils\TitleBar.cs" />
+    <Compile Include="UI\Utils\UIFastList.cs" />
+    <Compile Include="UI\Utils\UIUtils.cs" />
+    <Compile Include="UI\Utils\UsedRouteRowItem.cs" />
+    <Compile Include="UI\Utils\UsedRoutesPanel.cs" />
     <Compile Include="Utils\DynamicSignConfig.cs" />
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\FontUtils.cs" />
     <Compile Include="Utils\LoggerUtils.cs" />
     <Compile Include="Utils\MeshUtils.cs" />
     <Compile Include="Utils\ModSettings.cs" />
-    <Compile Include="Utils\ReflectionUtils.cs" />
+    <Compile Include="Utils\PropUtils.cs" />
     <Compile Include="Utils\RouteShieldConfig.cs" />
     <Compile Include="Utils\ShaderUtils.cs" />
     <Compile Include="Utils\SignPropConfig.cs" />
     <Compile Include="Utils\SpriteUtils.cs" />
+    <Compile Include="Utils\TextureReplaceConfig.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Icons\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="LitJson\AssemblyInfo.cs.in" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />

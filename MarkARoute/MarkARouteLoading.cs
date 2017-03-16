@@ -4,6 +4,7 @@ using LitJson;
 using MarkARoute.Managers;
 using MarkARoute.UI;
 using MarkARoute.Utils;
+using MarkARoute.Patches;
 using System;
 using System.IO;
 using System.Reflection;
@@ -29,12 +30,8 @@ namespace MarkARoute
             {
                 LoggerUtils.Log("Failure at jsonmapper!");
             }
-
-            try //So we don't fuck up loading the city
+            try
             {
-                var harmony = HarmonyInstance.Create("com.MarkaRoute");
-                harmony.PatchAll(Assembly.GetExecutingAssembly());
-
                 LoadSprites();
             }
             catch (Exception ex)
@@ -45,22 +42,34 @@ namespace MarkARoute
 
         public override void OnLevelLoaded(LoadMode mode)
         {
+        
             if (mode == LoadMode.LoadGame || mode == LoadMode.NewGame )
             {
                 ModSettings.LoadSettings();
 
                 UIView view = UIView.GetAView();
                 UI = ToolsModifierControl.toolController.gameObject.AddComponent<MainPanel>();
-
-
+                
+                // Initialize renderingManager
                 m_renderingManager = RenderingManager.instance;
                 m_renderingManager.enabled = true;
-
                 if (m_renderingManager != null && !m_renderingManager.m_registered)
                 {
                     RenderManager.RegisterRenderableManager(m_renderingManager);
                     m_renderingManager.m_registered = true;
                     m_renderingManager.ForceUpdate(false);
+                }
+
+                // Patch all applicable methods
+                try
+                {
+                    var harmony = HarmonyInstance.Create("com.MarkaRoute");
+                    harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+                }
+                catch (Exception ex)
+                {
+                    LoggerUtils.LogException(ex);
                 }
 
                 MarkARouteOptions.mInGame = true;
@@ -71,11 +80,9 @@ namespace MarkARoute
 
         public override void OnLevelUnloading()
         {
-            FileMonitoringManager.Instance().stopWatcher();
             // First disable dynamic sign updates
             RenderingManager.instance.disableTimer();
             ModSettings.SaveSettings();
-
             MarkARouteOptions.mInGame = false;
         }
 

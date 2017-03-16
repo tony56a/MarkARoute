@@ -1,4 +1,5 @@
 ﻿using ColossalFramework;
+using ColossalFramework.Math;
 using MarkARoute.Managers;
 using MarkARoute.UI;
 using MarkARoute.Utils;
@@ -20,7 +21,6 @@ namespace MarkARoute.Tools
         protected override void Awake()
         {
             LoggerUtils.Log("Tool awake");
-
             base.Awake();
         }
 
@@ -33,7 +33,6 @@ namespace MarkARoute.Tools
         {
             base.OnDisable();
             EventBusManager.Instance().Publish("closeAll", null);
-
         }
 
         protected override void OnToolUpdate()

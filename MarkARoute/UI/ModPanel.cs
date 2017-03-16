@@ -19,23 +19,24 @@ namespace MarkARoute.UI
         private StaticSignPlacementTool mSignPlacementTool;
         private DynamicSignPlacementTool mDynamicSignPlacementTool;
         private SignDeletionTool mSignDeletionTool;
+        private SignOverrideSelectorTool mSignOverrideTool;
 
         private UIButton markRouteBtn;
         private UIButton addSignBtn;
         private UIButton deleteSignBtn;
         private UIButton addDynamicSignBtn;
         private UIButton deleteDynamicSignBtn;
+        private UIButton signOverrideBtn;
 
         private GameObject m_namingPanelObject;
         private GameObject m_usedRoutesPanelObject;
         private GameObject m_addSignPanelObject;
-        //private GameObject m_deleteSignPanelObject;
-        //private GameObject m_propAngleDialogObject;
+        private GameObject m_overrideSignPanelObject;
 
-        private AddSignPanel m_addSignPanel;
+        private AddNewSignPanel m_addSignPanel;
         private RouteNamePanel m_namingPanel;
         private UsedRoutesPanel m_usedRoutesPanel;
-        //private AngleDialog angleDialog;
+        private AddOverrideSignPanel m_overrideSignPanel;
 
         public ModPanel()
         {
@@ -54,8 +55,10 @@ namespace MarkARoute.UI
             addDynamicSignBtn = getButton(yCursor, "Add a dynamic Sign", addDynamicSignBtn_eventClick);
             yCursor += (30 + PADDING);
             deleteDynamicSignBtn = getButton(yCursor, "Delete a dynamic Sign", deleteDynamicSignBtn_eventClick);
+            yCursor += (30 + PADDING);
+            signOverrideBtn = getButton(yCursor, "Override Sign", signOverrideBtn_eventClick );
 
-            this.height = deleteDynamicSignBtn.relativePosition.y + deleteDynamicSignBtn.height + PADDING * 2;
+            this.height = signOverrideBtn.relativePosition.y + signOverrideBtn.height + PADDING * 2;
 
             m_namingPanelObject = new GameObject("RouteNamePanel");
             m_namingPanel = m_namingPanelObject.AddComponent<RouteNamePanel>();
@@ -68,9 +71,14 @@ namespace MarkARoute.UI
             m_usedRoutesPanel.Hide();
 
             m_addSignPanelObject = new GameObject("AddSignsPanel");
-            m_addSignPanel = m_addSignPanelObject.AddComponent<AddSignPanel>();
+            m_addSignPanel = m_addSignPanelObject.AddComponent<AddNewSignPanel>();
             m_addSignPanel.transform.parent = uiView.transform;
             m_addSignPanel.Hide();
+
+            m_overrideSignPanelObject = new GameObject("AddOverrideSignPanel");
+            m_overrideSignPanel = m_overrideSignPanelObject.AddComponent<AddOverrideSignPanel>();
+            m_overrideSignPanel.transform.parent = uiView.transform;
+            m_overrideSignPanel.Hide();
 
             mDynamicSignPlacementTool = ToolsModifierControl.toolController.gameObject.AddComponent<DynamicSignPlacementTool>();
             mSignDeletionTool = ToolsModifierControl.toolController.gameObject.AddComponent<SignDeletionTool>();
@@ -83,20 +91,21 @@ namespace MarkARoute.UI
             mRoadSelectTool.m_usedRoutesPanel = m_usedRoutesPanel;
             mRoadSelectTool.m_dynamicSignPlacementTool = mDynamicSignPlacementTool;
 
+            mSignOverrideTool = ToolsModifierControl.toolController.gameObject.AddComponent<SignOverrideSelectorTool>();
+            mSignOverrideTool.m_overrideSignPanel = m_overrideSignPanel;
+
             EventBusManager.Instance().Subscribe("forceupdateroutes", m_usedRoutesPanel);
             EventBusManager.Instance().Subscribe("closeUsedNamePanel", m_usedRoutesPanel);
             EventBusManager.Instance().Subscribe("closeAll", m_usedRoutesPanel);
             EventBusManager.Instance().Subscribe("closeAll", m_namingPanel);
             EventBusManager.Instance().Subscribe("closeAll", m_addSignPanel);
+            EventBusManager.Instance().Subscribe("closeAll", m_overrideSignPanel);
+
             EventBusManager.Instance().Subscribe("updateroutepaneltext", m_addSignPanel);
             EventBusManager.Instance().Subscribe("updateroutepaneltext", m_namingPanel);
-            EventBusManager.Instance().Subscribe("setAngle", mSignPlacementTool);
-            EventBusManager.Instance().Subscribe("setAngle", mDynamicSignPlacementTool);
 
             ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
             ToolsModifierControl.SetTool<DefaultTool>();
-
-
         }
 
         public override void Start()
@@ -124,6 +133,20 @@ namespace MarkARoute.UI
             button.eventClick += handler;
             button.relativePosition = new Vector3(PADDING , y);
             return button;
+        }
+
+        private void signOverrideBtn_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            if (ToolsModifierControl.toolController.CurrentTool != mSignOverrideTool)
+            {
+                ToolsModifierControl.toolController.CurrentTool = mSignOverrideTool;
+                ToolsModifierControl.SetTool<SignOverrideSelectorTool>();
+            }
+            else
+            {
+                ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();
+                ToolsModifierControl.SetTool<DefaultTool>();
+            }
         }
 
         private void deleteDynamicSignBtn_eventClick(UIComponent component, UIMouseEventParameter eventParam)

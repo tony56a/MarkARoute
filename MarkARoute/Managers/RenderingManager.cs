@@ -13,80 +13,29 @@ namespace MarkARoute.Managers
 {
     class RenderingManager : SimulationManagerBase<RenderingManager, DistrictProperties>, IRenderableManager, ISimulationManager
     {
+        public static readonly float RENDER_HEIGHT = 1000f;
 
         private int m_lastCount = 0;
         private bool textHidden = false;
-
-        public float m_renderHeight = 1000f;
         public bool m_alwaysShowText = false;
         public bool m_registered = false;
         public bool m_routeEnabled = true;
-
-        public Dictionary<string, PropInfo> m_signPropDict;
 
         Timer messageUpdateTimer = new Timer();
         public volatile bool m_updateDynamicSignFlag = false;
         System.Random messageRandom = new System.Random();
 
-        public void initTimer()
-        {
-            messageUpdateTimer.Interval = 5000;
-            messageUpdateTimer.Elapsed += MessageUpdateTimer_Elapsed;
-            messageUpdateTimer.AutoReset = true;
-            messageUpdateTimer.Enabled = true;
-        }
-
-        public void disableTimer()
-        {
-            messageUpdateTimer.Enabled = false;
-            messageUpdateTimer.Stop();
-            messageUpdateTimer.Dispose();
-
-        }
-
-        public bool LoadPropMeshes()
-        {
-            m_signPropDict = new Dictionary<string, PropInfo>();
-            List<string> meshKeys = new List<string>(SignPropConfig.signPropInfoDict.Keys);
-            List<PrefabInfo> m_allPropInfos = Resources.FindObjectsOfTypeAll<PrefabInfo>().Where(prefabInfo =>
-                                                        prefabInfo.GetType().Equals(typeof(PropInfo))).ToList();
-
-            // Bit of a placeholder hack, since we don't support multiple type of VMS models as of yet
-            meshKeys.Add("electronic_sign_gantry");
-
-            for (int i = 0; i < meshKeys.Count; ++i)
-            {
-                foreach (PrefabInfo prefab in m_allPropInfos)
-                {
-                    if (prefab.name.ToLower().Contains(meshKeys[i]))
-                    {
-                        m_signPropDict[meshKeys[i]] = prefab as PropInfo;
-                    }
-                }
-            }
-
-            return meshKeys.Count == 0;
-        }
+        Dictionary<string, OverrideSignInfo> ref1 = SignPropConfig.overrideSignValues;
+        List<NetLaneProps.Prop> ref2 = PropUtils.findHighwaySignProp();
 
         public void replaceProp(bool shouldLoad)
         {
+            List<NetLaneProps.Prop> props = PropUtils.findHighwaySignProp();
             NetCollection[] propCollections = FindObjectsOfType<NetCollection>();
-            foreach (NetCollection collection in propCollections)
-            {
-                foreach (NetInfo prefab in collection.m_prefabs.Where(prefab => prefab.m_lanes != null))
-                {
-                    foreach (NetInfo.Lane lane in prefab.m_lanes.Where(lane => lane.m_laneProps != null))
-                    {
-                        foreach (NetLaneProps.Prop prop in lane.m_laneProps.m_props.Where(prop => prop != null)) 
-                        {
-                            if (prop.m_prop != null && prop.m_prop.name != null && prop.m_prop.name.ToLower().Contains("motorway overroad signs"))
-                            {
-                                prop.m_probability = shouldLoad ? 100 : 0;
-                            }
-                        }
-                    }
 
-                }
+            foreach( NetLaneProps.Prop prop in props)
+            {
+                prop.m_probability = shouldLoad ? 100 : 0;
             }
         }
 
@@ -95,18 +44,16 @@ namespace MarkARoute.Managers
             base.Awake();
 
             LoggerUtils.Log("Initialising RoadRenderingManager");
-
-            if (!LoadPropMeshes())
+            if (!PropUtils.LoadPropMeshes())
             {
                 LoggerUtils.LogError("Failed to load some props!");
             }
             else
             {
                 LoggerUtils.Log("Props loaded!");
-
             }
-
             replaceProp(ModSettings.Instance().loadMotorwaySigns);
+            RouteManager.instance.LoadOverrideTextures();
 
             DistrictManager districtManager = DistrictManager.instance;
             ShaderUtils.m_shaderStore.Add("fallback", districtManager.m_properties.m_areaNameShader);
@@ -134,7 +81,7 @@ namespace MarkARoute.Managers
                 }
             }
 
-            if (!textHidden && cameraInfo.m_height > m_renderHeight )
+            if (!textHidden && cameraInfo.m_height > RENDER_HEIGHT )
             {
                 foreach (RouteContainer route in RouteManager.instance.m_routeDict.Values)
                 {
@@ -144,16 +91,12 @@ namespace MarkARoute.Managers
 
                 foreach (SignContainer sign in RouteManager.instance.m_signList)
                 {
-                    /*sign.m_destinationMesh.GetComponent<Renderer>().enabled = false;
-                    sign.m_shieldMesh.GetComponent<Renderer>().enabled = false;
-                    sign.m_numMesh.GetComponent<Renderer>().enabled = false;*/
                     sign.m_sign.GetComponent<Renderer>().enabled = false;
                 }
                 textHidden = true;
             }
-            else if (textHidden && cameraInfo.m_height <= m_renderHeight ) //This is a mess, and I'll sort it soon :)
+            else if (textHidden && cameraInfo.m_height <= RENDER_HEIGHT ) //This is a mess, and I'll sort it soon :)
             {
-
                 if (m_routeEnabled)
                 {
                     foreach (RouteContainer route in RouteManager.instance.m_routeDict.Values)
@@ -164,9 +107,6 @@ namespace MarkARoute.Managers
 
                     foreach (SignContainer sign in RouteManager.instance.m_signList)
                     {
-                        /*sign.m_destinationMesh.GetComponent<Renderer>().enabled = true;
-                        sign.m_shieldMesh.GetComponent<Renderer>().enabled = true;
-                        sign.m_numMesh.GetComponent<Renderer>().enabled = true;*/
                         sign.m_sign.GetComponent<Renderer>().enabled = true;
                     }
                 }
@@ -175,25 +115,29 @@ namespace MarkARoute.Managers
 
             if (m_updateDynamicSignFlag)
             {
-
                 m_updateDynamicSignFlag = false;
-                float avg;
-                float lowTrafficMsgChance = 0.8f;
-                String msgText;
-                foreach (DynamicSignContainer sign in RouteManager.instance.m_dynamicSignList)
-                {
-                    avg = (float)sign.m_trafficDensity;
-                    avg -= sign.m_trafficDensity / 3;
-                    avg += netManager.m_segments.m_buffer[sign.m_segment].m_trafficDensity / 3;
-                    sign.m_trafficDensity = avg;
-                    msgText = (sign.m_route == null ? "Traffic" : (sign.m_routePrefix + '-' + sign.m_route)) +
-                    String.Format(" moving {0}", sign.m_trafficDensity > 65 ? "slowly" : "well");
-
-                    sign.m_messageTextMesh.text = (messageRandom.NextDouble() > lowTrafficMsgChance) ? msgText :
-                        DynamicSignConfig.Instance().msgStrings[messageRandom.Next(DynamicSignConfig.Instance().msgStrings.Count)];
-                }
+                UpdateDynamicSigns(netManager);
             }
 
+        }
+
+        private void UpdateDynamicSigns(NetManager netManager)
+        {
+            float avg;
+            float lowTrafficMsgChance = 0.8f;
+            String msgText;
+            foreach (DynamicSignContainer sign in RouteManager.instance.m_dynamicSignList)
+            {
+                avg = (float)sign.m_trafficDensity;
+                avg -= sign.m_trafficDensity / 3;
+                avg += netManager.m_segments.m_buffer[sign.m_segment].m_trafficDensity / 3;
+                sign.m_trafficDensity = avg;
+                msgText = (sign.m_route == null ? "Traffic" : (sign.m_routePrefix + '-' + sign.m_route)) +
+                String.Format(" moving {0}", sign.m_trafficDensity > 65 ? "slowly" : "well");
+
+                sign.m_messageTextMesh.text = (messageRandom.NextDouble() > lowTrafficMsgChance) ? msgText :
+                    DynamicSignConfig.Instance().msgStrings[messageRandom.Next(DynamicSignConfig.Instance().msgStrings.Count)];
+            }
         }
 
         /// <summary>
@@ -262,7 +206,7 @@ namespace MarkARoute.Managers
                                 {
                                     route.m_numMesh.GetComponent<Renderer>().material.shader = ShaderUtils.m_shaderStore["fallback"];
                                 }
-                                //TODO: Tie the font size to the font size option
+
                                 route.m_numMesh.fontSize = 50;
                                 route.m_numMesh.transform.position = startNode.m_position;
                                 route.m_numMesh.transform.parent = route.m_shieldObject.transform;
@@ -292,9 +236,9 @@ namespace MarkARoute.Managers
                 {
                     Vector3 position = new Vector3(sign.x, sign.y, sign.z);
 
-                    sign.m_sign.GetComponent<Renderer>().material = m_signPropDict["electronic_sign_gantry"].m_material;
+                    sign.m_sign.GetComponent<Renderer>().material = PropUtils.m_signPropDict["electronic_sign_gantry"].m_material;
                     //TODO: Make mesh size dependent on text size
-                    sign.m_sign.mesh = m_signPropDict["electronic_sign_gantry"].m_mesh;
+                    sign.m_sign.mesh = PropUtils.m_signPropDict["electronic_sign_gantry"].m_mesh;
                     sign.m_sign.transform.position = position;
 
                     sign.m_messageTextMesh.anchor = TextAnchor.MiddleLeft;
@@ -341,7 +285,7 @@ namespace MarkARoute.Managers
             foreach (SignContainer sign in RouteManager.instance.m_signList)
             {
                 Vector3 position = new Vector3(sign.x, sign.y, sign.z);
-                string signPropType = (sign.m_exitNum == null || !m_signPropDict.ContainsKey(sign.m_exitNum)) ? "hwysign" : sign.m_exitNum;
+                string signPropType = (sign.m_exitNum == null || !PropUtils.m_signPropDict.ContainsKey(sign.m_exitNum)) ? "hwysign" : sign.m_exitNum;
                 SignPropInfo signPropInfo = SignPropConfig.signPropInfoDict[signPropType];
                 int numSignProps = signPropInfo.isDoubleGantry ? 2 : 1;
 
@@ -414,7 +358,7 @@ namespace MarkARoute.Managers
 
                 MaybeDrawSignTexture(sign, signPropType);
                 //TODO: Make mesh size dependent on text size
-                sign.m_sign.mesh = m_signPropDict[signPropType].m_mesh;
+                sign.m_sign.mesh = PropUtils.m_signPropDict[signPropType].m_mesh;
                 sign.m_sign.transform.position = position;
 
                 if (sign.useTextureOverride)
@@ -515,32 +459,10 @@ namespace MarkARoute.Managers
 
         private void MaybeDrawSignTexture(SignContainer sign, string signPropType)
         {
-            Material material = m_signPropDict[signPropType].m_material;
+            Material material = PropUtils.m_signPropDict[signPropType].m_material;
             if (sign.useTextureOverride)
             {
-                Texture2D texture = material.mainTexture as Texture2D;
-                material = Instantiate(m_signPropDict[signPropType].m_material) as Material;
-                Texture2D texCopy = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
-                texCopy.SetPixels(texture.GetPixels());
-
-                TextureSignPropInfo signPropTextureInfo = SignPropConfig.texturePropInfoDict[signPropType];
-                for (int i = 0; i < signPropTextureInfo.numTextures; i++)
-                {
-                    string textureString = sign.textureOverrides[i];
-                    if (textureString != null && textureString != RouteManager.NONE && SpriteUtils.mTextureStore[signPropType].mTextureRefs[(i + 1).ToString()].ContainsKey(textureString))
-                    {
-                        Texture2D otherTexture = SpriteUtils.mTextureStore[signPropType].mTextureRefs[(i + 1).ToString()][textureString];
-                        for (int j = 0; j < otherTexture.width; j++)
-                        {
-                            for (int k = 0; k < otherTexture.height; k++)
-                            {
-                                texCopy.SetPixel((int)signPropTextureInfo.drawAreas[i].x + j, (int)signPropTextureInfo.drawAreas[i].yMax - k, otherTexture.GetPixel(j, k));
-                            }
-                        }
-                    }
-                }
-                texCopy.Apply();
-                material.mainTexture = texCopy;
+                material = PropUtils.ReplaceTexture(signPropType, sign.textureOverrides);
             }
 
             sign.m_sign.GetComponent<Renderer>().material = material;
@@ -567,7 +489,21 @@ namespace MarkARoute.Managers
             {
                 m_lastCount = -1;
             }
+        }
 
+        public void initTimer()
+        {
+            messageUpdateTimer.Interval = 5000;
+            messageUpdateTimer.Elapsed += MessageUpdateTimer_Elapsed;
+            messageUpdateTimer.AutoReset = true;
+            messageUpdateTimer.Enabled = true;
+        }
+
+        public void disableTimer()
+        {
+            messageUpdateTimer.Enabled = false;
+            messageUpdateTimer.Stop();
+            messageUpdateTimer.Dispose();
         }
 
     }
