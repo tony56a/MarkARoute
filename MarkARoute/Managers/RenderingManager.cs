@@ -13,31 +13,15 @@ namespace MarkARoute.Managers
 {
     class RenderingManager : SimulationManagerBase<RenderingManager, DistrictProperties>, IRenderableManager, ISimulationManager
     {
-        public static readonly float RENDER_HEIGHT = 1000f;
+        public static float RENDER_HEIGHT = 200f;
 
         private int m_lastCount = 0;
         private bool textHidden = false;
-        public bool m_alwaysShowText = false;
         public bool m_registered = false;
-        public bool m_routeEnabled = true;
 
         Timer messageUpdateTimer = new Timer();
         public volatile bool m_updateDynamicSignFlag = false;
         System.Random messageRandom = new System.Random();
-
-        Dictionary<string, OverrideSignInfo> ref1 = SignPropConfig.overrideSignValues;
-        List<NetLaneProps.Prop> ref2 = PropUtils.findHighwaySignProp();
-
-        public void replaceProp(bool shouldLoad)
-        {
-            List<NetLaneProps.Prop> props = PropUtils.findHighwaySignProp();
-            NetCollection[] propCollections = FindObjectsOfType<NetCollection>();
-
-            foreach( NetLaneProps.Prop prop in props)
-            {
-                prop.m_probability = shouldLoad ? 100 : 0;
-            }
-        }
 
         protected override void Awake()
         {
@@ -52,11 +36,10 @@ namespace MarkARoute.Managers
             {
                 LoggerUtils.Log("Props loaded!");
             }
-            replaceProp(ModSettings.Instance().loadMotorwaySigns);
             RouteManager.instance.LoadOverrideTextures();
 
             DistrictManager districtManager = DistrictManager.instance;
-            ShaderUtils.m_shaderStore.Add("fallback", districtManager.m_properties.m_areaNameShader);
+            ShaderUtils.m_shaderStore.Add("fallback", DistrictManager.instance.m_properties.m_areaNameShader);
 
             //Only start dynamic signs after everything's loaded
             RenderingManager.instance.initTimer();
@@ -97,18 +80,15 @@ namespace MarkARoute.Managers
             }
             else if (textHidden && cameraInfo.m_height <= RENDER_HEIGHT ) //This is a mess, and I'll sort it soon :)
             {
-                if (m_routeEnabled)
+                foreach (RouteContainer route in RouteManager.instance.m_routeDict.Values)
                 {
-                    foreach (RouteContainer route in RouteManager.instance.m_routeDict.Values)
-                    {
-                        route.m_shieldMesh.GetComponent<Renderer>().enabled = true;
-                        route.m_numMesh.GetComponent<Renderer>().enabled = true;
-                    }
+                    route.m_shieldMesh.GetComponent<Renderer>().enabled = true;
+                    route.m_numMesh.GetComponent<Renderer>().enabled = true;
+                }
 
-                    foreach (SignContainer sign in RouteManager.instance.m_signList)
-                    {
-                        sign.m_sign.GetComponent<Renderer>().enabled = true;
-                    }
+                foreach (SignContainer sign in RouteManager.instance.m_signList)
+                {
+                    sign.m_sign.GetComponent<Renderer>().enabled = true;
                 }
                 textHidden = false;
             }
@@ -152,8 +132,6 @@ namespace MarkARoute.Managers
 
             if (districtManager.m_properties.m_areaNameFont != null)
             {
-                UIFontManager.Invalidate(districtManager.m_properties.m_areaNameFont);
-
                 foreach (RouteContainer route in RouteManager.instance.m_routeDict.Values)
                 {
 
@@ -222,7 +200,7 @@ namespace MarkARoute.Managers
                                 route.m_numMesh.transform.localPosition += (Vector3.left * shieldInfo.leftOffset);
                                 //TODO: Figure out a better ratio for route markers
                                 route.m_numMesh.transform.localScale = new Vector3(shieldInfo.textScale, shieldInfo.textScale, shieldInfo.textScale);
-                                route.m_numMesh.GetComponent<Renderer>().material.color = shieldInfo.textColor;
+                                route.m_numMesh.color = shieldInfo.textColor;
                                 route.m_numMesh.text = route.m_route.ToString();
 
                             }
@@ -254,7 +232,6 @@ namespace MarkARoute.Managers
                     }
 
                     sign.m_messageTextMesh.color = (new Color(1, 0.77f, 0.56f, 1f));
-                    sign.m_messageTextMesh.font.material.SetColor("Text Color", new Color(1, 0.77f, 0.56f, 1f));
 
                     sign.m_messageTextMesh.GetComponent<Renderer>().material = sign.m_messageTextMesh.font.material;
                     //TODO: Tie the font size to the font size option
@@ -281,6 +258,8 @@ namespace MarkARoute.Managers
 
         private void DrawSignProps(bool forceTextureUpdates, DistrictManager districtManager)
         {
+            //Verify font is available
+            LoggerUtils.Log(districtManager == null);
 
             foreach (SignContainer sign in RouteManager.instance.m_signList)
             {
@@ -405,7 +384,7 @@ namespace MarkARoute.Managers
                     sign.m_numMesh.transform.localPosition += (Vector3.left * shieldInfo.leftOffset);
                     //TODO: Figure out a better ratio for route markers
                     sign.m_numMesh.transform.localScale = new Vector3(shieldInfo.textScale, shieldInfo.textScale, shieldInfo.textScale);
-                    sign.m_numMesh.GetComponent<Renderer>().material.color = shieldInfo.textColor;
+                    sign.m_numMesh.color = shieldInfo.textColor;
                     sign.m_numMesh.text = sign.m_route.ToString();
 
                     sign.m_shieldMesh.transform.parent = sign.m_sign.transform;
@@ -424,7 +403,6 @@ namespace MarkARoute.Managers
                     {
                         sign.m_destinationMesh[i].anchor = TextAnchor.MiddleCenter;
                         sign.m_destinationMesh[i].font = FontUtils.m_fontStore.ContainsKey(signPropInfo.fontType) ? FontUtils.m_fontStore[signPropInfo.fontType] : districtManager.m_properties.m_areaNameFont.baseFont;
-                        sign.m_destinationMesh[i].font.material.SetColor("Text Color", Color.white);
 
                         if (ShaderUtils.m_shaderStore.ContainsKey("font"))
                         {
@@ -436,6 +414,8 @@ namespace MarkARoute.Managers
                         }
 
                         sign.m_destinationMesh[i].GetComponent<Renderer>().material = sign.m_destinationMesh[i].font.material;
+                        sign.m_destinationMesh[i].color = sign.color;
+
                         //TODO: Tie the font size to the font size option
                         sign.m_destinationMesh[i].fontSize = 50;
                         sign.m_destinationMesh[i].transform.position = position;

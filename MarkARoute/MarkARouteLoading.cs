@@ -42,14 +42,14 @@ namespace MarkARoute
 
         public override void OnLevelLoaded(LoadMode mode)
         {
-        
+
             if (mode == LoadMode.LoadGame || mode == LoadMode.NewGame )
             {
                 ModSettings.LoadSettings();
 
                 UIView view = UIView.GetAView();
                 UI = ToolsModifierControl.toolController.gameObject.AddComponent<MainPanel>();
-                
+               
                 // Initialize renderingManager
                 m_renderingManager = RenderingManager.instance;
                 m_renderingManager.enabled = true;

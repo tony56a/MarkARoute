@@ -16,7 +16,10 @@ namespace MarkARoute.UI
         protected const string OVERLAY = "Overlay";
         protected const string TEXTURE_REPLACE = "Texture replace";
 
-        protected RectOffset m_UIPadding = new RectOffset(5, 5, 5, 5);
+        public abstract List<String> supportedModes
+        {
+            get;
+        }
 
         private TitleBar m_panelTitle;
         protected UIDropDown m_routeTypeDropdown;
@@ -24,6 +27,9 @@ namespace MarkARoute.UI
         private UILabel m_routeLabel;
 
         protected UITextField[] m_destinationField = new UITextField[2];
+        private UIPanel m_colourSelectorPinPanel;
+        private UILabel m_signColorLabel;
+        private UIColorField m_colourSelector;
         private UILabel m_destinationLabel;
 
         private UILabel m_propTypeLabel;
@@ -40,6 +46,8 @@ namespace MarkARoute.UI
         protected List<TextureSelectOption> mTextureSelectOptions = new List<TextureSelectOption>();
 
         public StaticSignPlacementTool mSignPlacementTool;
+
+        public abstract void populatePropTypes();
 
         public override void Awake()
         {
@@ -68,57 +76,52 @@ namespace MarkARoute.UI
 
         private void CreatePanelComponents()
         {
-            yCursor = m_panelTitle.height + m_UIPadding.top;
+            yCursor = m_panelTitle.height + UIUtils.UIPadding.top;
 
             m_propRenderingTypeLabel = this.AddUIComponent<UILabel>();
             m_propRenderingTypeLabel.textScale = 1f;
-            m_propRenderingTypeLabel.size = new Vector3(m_UIPadding.left, m_panelTitle.height + m_UIPadding.bottom);
+            m_propRenderingTypeLabel.size = new Vector3(UIUtils.UIPadding.left, m_panelTitle.height + UIUtils.UIPadding.bottom);
             m_propRenderingTypeLabel.textColor = new Color32(180, 180, 180, 255);
-            m_propRenderingTypeLabel.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_propRenderingTypeLabel.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_propRenderingTypeLabel.textAlignment = UIHorizontalAlignment.Left;
             m_propRenderingTypeLabel.text = "Sign Texture method";
 
-            yCursor += m_propRenderingTypeLabel.height + m_UIPadding.bottom;
+            yCursor += m_propRenderingTypeLabel.height + UIUtils.UIPadding.bottom;
 
-            m_propRenderingTypeDropdown = UIUtils.CreateDropDown(this, new Vector2(((this.width - m_UIPadding.left - 2 * m_UIPadding.right)), 25));
-            foreach (String replacementType in new List<String> { OVERLAY,TEXTURE_REPLACE } )
+            m_propRenderingTypeDropdown = UIUtils.CreateDropDown(this, new Vector2(((this.width - UIUtils.UIPadding.left - 2 * UIUtils.UIPadding.right)), 25));
+            foreach (String replacementType in supportedModes)
             {
                 m_propRenderingTypeDropdown.AddItem(replacementType);
             }
             m_propRenderingTypeDropdown.selectedIndex = 0;
             m_propRenderingTypeDropdown.autoListWidth = true;
-            m_propRenderingTypeDropdown.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_propRenderingTypeDropdown.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_propRenderingTypeDropdown.eventSelectedIndexChanged += M_propTextTypeDropdown_eventSelectedIndexChanged;
 
-            yCursor += m_propRenderingTypeDropdown.height + m_UIPadding.bottom;
+            yCursor += m_propRenderingTypeDropdown.height + UIUtils.UIPadding.bottom;
 
             m_propTypeLabel = this.AddUIComponent<UILabel>();
             m_propTypeLabel.textScale = 1f;
-            m_propTypeLabel.size = new Vector3(m_UIPadding.left, m_panelTitle.height + m_UIPadding.bottom);
+            m_propTypeLabel.size = new Vector3(UIUtils.UIPadding.left, m_panelTitle.height + UIUtils.UIPadding.bottom);
             m_propTypeLabel.textColor = new Color32(180, 180, 180, 255);
-            m_propTypeLabel.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_propTypeLabel.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_propTypeLabel.textAlignment = UIHorizontalAlignment.Left;
             m_propTypeLabel.text = "Sign prop type";
 
-            yCursor += m_propRenderingTypeDropdown.height + m_UIPadding.bottom;
-            
-            m_propTypeDropDown = UIUtils.CreateDropDown(this, new Vector2(((this.width - m_UIPadding.left - 2 * m_UIPadding.right)), 25));
-            //TODO: Replace with Random namer values
-            var keys = PropUtils.m_signPropDict.Keys;
-            foreach (String signPropName in PropUtils.m_signPropDict.Keys.Where(key => SignPropConfig.signPropInfoDict.ContainsKey(key)))
-            {
-                m_propTypeDropDown.AddItem(signPropName);
-            }
+            yCursor += m_propRenderingTypeDropdown.height + UIUtils.UIPadding.bottom;
+
+            m_propTypeDropDown = UIUtils.CreateDropDown(this, new Vector2(((this.width - UIUtils.UIPadding.left - 2 * UIUtils.UIPadding.right)), 25));
+            populatePropTypes();
             m_propTypeDropDown.autoListWidth = true;
             m_propTypeDropDown.selectedIndex = 0;
-            m_propTypeDropDown.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_propTypeDropDown.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_propTypeDropDown.eventSelectedIndexChanged += M_propTypeDropDown_eventSelectedIndexChanged;
 
-            yCursor += m_propTypeDropDown.height + m_UIPadding.bottom;
+            yCursor += m_propTypeDropDown.height + UIUtils.UIPadding.bottom;
 
             float tempYCursor = yCursor;
 
-            for(int i = 0; i < 4; i++)
+            for (int i = 0; i < 4; i++)
             {
                 TextureSelectOption option = TextureSelectOption.CreateOptions(String.Format("#{0} texture", i + 1), this, ref tempYCursor);
                 option.isHidden = true;
@@ -129,80 +132,125 @@ namespace MarkARoute.UI
 
             m_routeLabel = this.AddUIComponent<UILabel>();
             m_routeLabel.textScale = 1f;
-            m_routeLabel.size = new Vector3(m_UIPadding.left, m_panelTitle.height + m_UIPadding.bottom);
+            m_routeLabel.size = new Vector3(UIUtils.UIPadding.left, m_panelTitle.height + UIUtils.UIPadding.bottom);
             m_routeLabel.textColor = new Color32(180, 180, 180, 255);
-            m_routeLabel.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_routeLabel.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_routeLabel.textAlignment = UIHorizontalAlignment.Left;
             m_routeLabel.text = "Route Name";
 
-            yCursor += m_routeLabel.height + m_UIPadding.bottom;
+            yCursor += m_routeLabel.height + UIUtils.UIPadding.bottom;
 
-            m_routeTypeDropdown = UIUtils.CreateDropDown(this, new Vector2(((this.width - m_UIPadding.left - 2 * m_UIPadding.right)), 25));
+            m_routeTypeDropdown = UIUtils.CreateDropDown(this, new Vector2(((this.width - UIUtils.UIPadding.left - 2 * UIUtils.UIPadding.right)), 25));
             foreach (RouteShieldInfo info in RouteShieldConfig.Instance().routeShieldDictionary.Values)
             {
                 m_routeTypeDropdown.AddItem(info.textureName);
             }
             m_routeTypeDropdown.selectedIndex = 0;
-            m_routeTypeDropdown.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_routeTypeDropdown.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
 
-            yCursor += m_routeTypeDropdown.height + m_UIPadding.bottom;
+            yCursor += m_routeTypeDropdown.height + UIUtils.UIPadding.bottom;
 
             m_routeStrField = UIUtils.CreateTextField(this);
-            m_routeStrField.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_routeStrField.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_routeStrField.height = 25;
-            m_routeStrField.width = (this.width - m_UIPadding.left - 2 * m_UIPadding.right);
+            m_routeStrField.width = (this.width - UIUtils.UIPadding.left - 2 * UIUtils.UIPadding.right);
             m_routeStrField.processMarkup = false;
             m_routeStrField.textColor = Color.white;
             m_routeStrField.maxLength = 3;
 
-            yCursor += m_routeStrField.height + m_UIPadding.bottom;
+            yCursor += m_routeStrField.height + UIUtils.UIPadding.bottom;
 
             m_destinationLabel = this.AddUIComponent<UILabel>();
             m_destinationLabel.textScale = 1f;
-            m_destinationLabel.size = new Vector3(m_UIPadding.left, m_panelTitle.height + m_UIPadding.bottom);
+            m_destinationLabel.size = new Vector3(UIUtils.UIPadding.left, m_panelTitle.height + UIUtils.UIPadding.bottom);
             m_destinationLabel.textColor = new Color32(180, 180, 180, 255);
-            m_destinationLabel.relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_destinationLabel.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_destinationLabel.textAlignment = UIHorizontalAlignment.Left;
             m_destinationLabel.text = "Destination Name";
 
-            yCursor += m_destinationLabel.height + m_UIPadding.bottom;
+            yCursor += m_destinationLabel.height + UIUtils.UIPadding.bottom;
 
             m_destinationField[0] = UIUtils.CreateTextField(this);
-            m_destinationField[0].relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_destinationField[0].relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_destinationField[0].height = 25;
-            m_destinationField[0].width = (this.width - m_UIPadding.left - 2 * m_UIPadding.right);
+            m_destinationField[0].width = (this.width - UIUtils.UIPadding.left - 2 * UIUtils.UIPadding.right);
             m_destinationField[0].processMarkup = false;
             m_destinationField[0].textColor = Color.white;
 
-            yCursor += m_destinationField[0].height + m_UIPadding.bottom;
+            yCursor += m_destinationField[0].height + UIUtils.UIPadding.bottom;
 
             m_destinationField[1] = UIUtils.CreateTextField(this);
-            m_destinationField[1].relativePosition = new Vector3(m_UIPadding.left, yCursor);
+            m_destinationField[1].relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
             m_destinationField[1].height = 25;
-            m_destinationField[1].width = (this.width - m_UIPadding.left - 2 * m_UIPadding.right);
+            m_destinationField[1].width = (this.width - UIUtils.UIPadding.left - 2 * UIUtils.UIPadding.right);
             m_destinationField[1].processMarkup = false;
             m_destinationField[1].textColor = Color.white;
 
-            yCursor += m_destinationField[1].height + m_UIPadding.bottom;
+            yCursor += m_destinationField[1].height + UIUtils.UIPadding.bottom;
+
+            m_signColorLabel = this.AddUIComponent<UILabel>();
+            m_signColorLabel.textScale = 1f;
+            m_signColorLabel.size = new Vector3(UIUtils.UIPadding.left, m_panelTitle.height + UIUtils.UIPadding.bottom);
+            m_signColorLabel.textColor = new Color32(180, 180, 180, 255);
+            m_signColorLabel.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
+            m_signColorLabel.textAlignment = UIHorizontalAlignment.Left;
+            m_signColorLabel.text = "Text Color";
+
+            yCursor += m_destinationLabel.height + UIUtils.UIPadding.bottom;
+
+            m_colourSelectorPinPanel = this.AddUIComponent<UIPanel>();
+            m_colourSelectorPinPanel.relativePosition = new Vector3(UIUtils.UIPadding.left, yCursor);
+
+            m_colourSelector = UIUtils.CreateColorField(m_colourSelectorPinPanel);
+            m_colourSelector.pickerPosition = UIColorField.ColorPickerPosition.LeftBelow;
+            m_colourSelector.eventColorChanged += ColourSelector_eventColorChanged;
+            m_colourSelector.eventColorPickerClose += ColourSelector_eventColorPickerClose;
+            m_colourSelector.tooltip = "Set the text colour";
+            m_colourSelector.relativePosition = new Vector3(0, 0);
+
             bottomYCursor = yCursor;
 
             nameRoadButton = UIUtils.CreateButton(this);
             nameRoadButton.text = "Set";
             nameRoadButton.size = new Vector2(60, 30);
-            nameRoadButton.relativePosition = new Vector3(this.width - nameRoadButton.width - m_UIPadding.right,yCursor);
+            nameRoadButton.relativePosition = new Vector3(this.width - nameRoadButton.width - UIUtils.UIPadding.right, yCursor);
             nameRoadButton.eventClicked += NameRoadButton_eventClicked;
             nameRoadButton.tooltip = "Create the label";
 
-            yCursor += nameRoadButton.height + m_UIPadding.bottom;
+            yCursor += nameRoadButton.height + UIUtils.UIPadding.bottom;
 
             this.height = yCursor;
+            SetAddSignType(m_propRenderingTypeDropdown.selectedValue);
+
+        }
+
+
+        private void ColourSelector_eventColorChanged(UIComponent component, Color32 color)
+        {
+            foreach (UITextField textField in m_destinationField)
+            {
+                textField.textColor = color;
+            }
+        }
+
+        private void ColourSelector_eventColorPickerClose(UIColorField dropdown, UIColorPicker popup, ref bool overridden)
+        {
+            foreach( UITextField textField in m_destinationField)
+            {
+                textField.textColor = popup.color;
+            }
         }
 
         public abstract void SetRoadData();
 
         private void M_propTextTypeDropdown_eventSelectedIndexChanged(UIComponent component, int value)
         {
-            switch (m_propRenderingTypeDropdown.selectedValue)
+            SetAddSignType(m_propRenderingTypeDropdown.selectedValue);
+        }
+
+        private void SetAddSignType(String value)
+        {
+            switch (value)
             {
                 case TEXTURE_REPLACE:
                     m_routeLabel.Hide();
@@ -211,15 +259,19 @@ namespace MarkARoute.UI
                     m_destinationLabel.Hide();
                     m_destinationField[0].Hide();
                     m_destinationField[1].Hide();
+                    m_signColorLabel.Hide();
+                    m_colourSelectorPinPanel.Hide();
+                    m_colourSelector.Hide();
 
                     foreach (TextureSelectOption option in mTextureSelectOptions)
                     {
                         option.isHidden = true;
 
                     }
-                    if (TextureReplaceConfig.texturePropInfoDict.ContainsKey(m_propTypeDropDown.selectedValue)){
+                    if (TextureReplaceConfig.texturePropInfoDict.ContainsKey(m_propTypeDropDown.selectedValue))
+                    {
                         TextureReplaceConfig.TextureSignPropInfo info = TextureReplaceConfig.texturePropInfoDict[m_propTypeDropDown.selectedValue];
-                        for (int i = 0; i <info.numTextures; i++)
+                        for (int i = 0; i < info.numTextures; i++)
                         {
                             mTextureSelectOptions[i].isHidden = false;
                             mTextureSelectOptions[i].textureSelectLabel.text = String.Format("{0} texture", info.drawAreaDescriptors[i]);
@@ -227,7 +279,7 @@ namespace MarkARoute.UI
                             mTextureSelectOptions[i].m_textureDropdown.items = null;
                             mTextureSelectOptions[i].m_textureDropdown.AddItem(RouteManager.NONE);
 
-                            foreach ( string key in SpriteUtils.mTextureStore[m_propTypeDropDown.selectedValue].mTextureRefs[(i + 1).ToString()].Keys)
+                            foreach (string key in SpriteUtils.mTextureStore[m_propTypeDropDown.selectedValue].mTextureRefs[(i + 1).ToString()].Keys)
                             {
                                 mTextureSelectOptions[i].m_textureDropdown.AddItem(key);
                             }
@@ -236,12 +288,16 @@ namespace MarkARoute.UI
                         }
 
                         UIComponent bottomComponent = mTextureSelectOptions[info.numTextures - 1].m_textureDropdown;
-                        bottomTextureYCursor = bottomComponent.relativePosition.y + bottomComponent.height + m_UIPadding.bottom;
+                        bottomTextureYCursor = bottomComponent.relativePosition.y + bottomComponent.height + UIUtils.UIPadding.bottom;
 
                     }
-                    nameRoadButton.relativePosition = new Vector3(this.width - nameRoadButton.width - m_UIPadding.right, bottomTextureYCursor);
-                    
-                    this.height = bottomTextureYCursor + nameRoadButton.height + m_UIPadding.bottom;
+                    else
+                    {
+                        bottomTextureYCursor = m_routeTypeDropdown.relativePosition.y + m_routeTypeDropdown.height + UIUtils.UIPadding.bottom;
+                    }
+                    nameRoadButton.relativePosition = new Vector3(this.width - nameRoadButton.width - UIUtils.UIPadding.right, bottomTextureYCursor);
+
+                    this.height = bottomTextureYCursor + nameRoadButton.height + UIUtils.UIPadding.bottom;
                     break;
                 case OVERLAY:
                     m_routeLabel.Show();
@@ -250,28 +306,43 @@ namespace MarkARoute.UI
                     m_destinationLabel.Show();
                     m_destinationField[0].Show();
                     m_destinationField[1].Show();
+                    m_signColorLabel.Show();
+                    m_colourSelectorPinPanel.Show();
+                    m_colourSelector.Show();
                     foreach (TextureSelectOption option in mTextureSelectOptions)
                     {
                         option.isHidden = true;
                     }
 
-                    nameRoadButton.relativePosition = new Vector3(this.width - nameRoadButton.width - m_UIPadding.right, bottomYCursor);
-                    this.height = bottomYCursor + nameRoadButton.height + m_UIPadding.bottom;
+                    nameRoadButton.relativePosition = new Vector3(this.width - nameRoadButton.width - UIUtils.UIPadding.right, bottomYCursor);
+                    this.height = bottomYCursor + nameRoadButton.height + UIUtils.UIPadding.bottom;
                     break;
             }
         }
-
 
         private void M_propTypeDropDown_eventSelectedIndexChanged(UIComponent component, int value)
         {
             m_propRenderingTypeDropdown.selectedIndex = 0;
             m_propRenderingTypeDropdown.items = null;
-            m_propRenderingTypeDropdown.AddItem("Overlay");
-            if (TextureReplaceConfig.texturePropInfoDict.ContainsKey(m_propTypeDropDown.selectedValue))
+            if (supportedModes.Contains(OVERLAY))
             {
-                m_propRenderingTypeDropdown.AddItem("Texture replace");
+                m_propRenderingTypeDropdown.AddItem(OVERLAY);
             }
 
+            if (TextureReplaceConfig.texturePropInfoDict.ContainsKey(m_propTypeDropDown.selectedValue))
+            {
+                m_propRenderingTypeDropdown.AddItem(TEXTURE_REPLACE);
+            }
+            else
+            {
+                m_propRenderingTypeDropdown.AddItem(RouteManager.NONE);
+            }
+           
+            if(!supportedModes.Contains(OVERLAY))
+            {
+                SetAddSignType(TEXTURE_REPLACE);
+            }
+            
         }
 
 

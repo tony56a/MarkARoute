@@ -24,7 +24,6 @@ namespace MarkARoute.Utils
         public float btnPositionY = 60f;
         public float btnPositionZ = 0f;
 
-        public bool loadMotorwaySigns = false;
         #endregion
 
         #region settingSetters

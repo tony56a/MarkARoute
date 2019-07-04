@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace MarkARoute.Tools
 {
@@ -13,6 +14,7 @@ namespace MarkARoute.Tools
 
         public bool useTextureReplace;
         public List<string> textureReplaceStrings;
+        public Color color;
 
         protected override void Awake()
         {
@@ -33,7 +35,7 @@ namespace MarkARoute.Tools
                 RouteManager.instance.SetSign(this.m_cachedPosition, this.m_cachedAngle, this.signType, textureReplaceStrings);
             }else
             {
-                RouteManager.instance.SetSign(this.m_cachedPosition, this.m_cachedAngle, routePrefix, routeStr, destination, this.signType);
+                RouteManager.instance.SetSign(this.m_cachedPosition, this.m_cachedAngle, routePrefix, routeStr, destination, this.signType, this.color);
             }
             RenderingManager.instance.ForceUpdate(false);
             ToolsModifierControl.toolController.CurrentTool = ToolsModifierControl.GetTool<DefaultTool>();

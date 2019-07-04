@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Xml.Serialization;
 using UnityEngine;
 
@@ -48,6 +49,27 @@ namespace MarkARoute.Managers
             }
         }
 
+        public void Clear()
+        {
+            foreach (ushort segmentId in m_routeDict.Keys)
+            {
+                Destroy(m_routeDict[segmentId].m_shieldObject);
+                m_routeDict.Remove(segmentId);
+            }
+            m_usedRoutes.Clear();
+            foreach(SignContainer container in m_signList)
+            {
+                Destroy(container.m_signObj);
+            }
+            m_signList.Clear();
+            foreach (DynamicSignContainer container in m_dynamicSignList)
+            {
+                Destroy(container.m_signObj);
+            }
+            m_dynamicSignList.Clear();
+            m_overrideSignDict.Clear();
+        }
+
         public void DelRoadRoute(ushort segmentId)
         {
             if (m_routeDict.ContainsKey(segmentId))
@@ -55,7 +77,7 @@ namespace MarkARoute.Managers
                 string routePrefix = m_routeDict[segmentId].m_routePrefix;
                 string routeNum = m_routeDict[segmentId].m_route.ToString();
                 string routeStr = routePrefix + '/' + routeNum;
-                GameObject.Destroy(m_routeDict[segmentId].m_shieldObject);
+                Destroy(m_routeDict[segmentId].m_shieldObject);
                 m_routeDict.Remove(segmentId);
                 DecrementRoadRouteCounter(routeStr);
             }
@@ -116,9 +138,9 @@ namespace MarkARoute.Managers
             m_dynamicSignList.Add(signContainer);
         }
 
-        public void SetSign(Vector3 position, float angle, string routePrefix, string route, string destination, string signType)
+        public void SetSign(Vector3 position, float angle, string routePrefix, string route, string destination, string signType, Color color )
         {
-            SignContainer signContainer = new SignContainer(position, angle, routePrefix, route, destination);
+            SignContainer signContainer = new SignContainer(position, angle, routePrefix, route, destination, color);
             SetSign(signType, signContainer);
         
         }
@@ -166,8 +188,8 @@ namespace MarkARoute.Managers
 
                     break;
             }
-          
-          
+
+
         }
 
         public void SetRoute(ushort segmentId, string routePrefix, string route, string oldRouteStr = null)
@@ -248,72 +270,107 @@ namespace MarkARoute.Managers
 
         public void Load(RouteContainer[] routeNames)
         {
-            if (routeNames != null)
+            while (!Monitor.TryEnter(this.m_routeDict, SimulationManager.SYNCHRONIZE_TIMEOUT));
+            try
             {
-                foreach (RouteContainer route in routeNames)
+                if (routeNames != null && routeNames.Length > 0)
                 {
-                    m_routeDict[route.m_segmentId] = route;
-                    if (route.m_shieldObject == null)
+                    foreach (RouteContainer route in routeNames)
                     {
-                        route.m_shieldObject = new GameObject(route.m_segmentId + "shield");
-                        route.m_shieldObject.AddComponent<MeshRenderer>();
-                        route.m_shieldMesh = route.m_shieldObject.AddComponent<MeshFilter>();
-                        GameObject numTextObject = new GameObject(route.m_segmentId + "text");
-                        numTextObject.transform.parent = route.m_shieldObject.transform;
-                        numTextObject.AddComponent<MeshRenderer>();
-                        numTextObject.GetComponent<MeshRenderer>().sortingOrder = 1001;
-                        route.m_numMesh = numTextObject.AddComponent<TextMesh>();
-                    }
+                        m_routeDict[route.m_segmentId] = route;
+                        if (route.m_shieldObject == null)
+                        {
+                            route.m_shieldObject = new GameObject(route.m_segmentId + "shield");
+                            route.m_shieldObject.AddComponent<MeshRenderer>();
+                            route.m_shieldMesh = route.m_shieldObject.AddComponent<MeshFilter>();
+                            GameObject numTextObject = new GameObject(route.m_segmentId + "text");
+                            numTextObject.transform.parent = route.m_shieldObject.transform;
+                            numTextObject.AddComponent<MeshRenderer>();
+                            numTextObject.GetComponent<MeshRenderer>().sortingOrder = 1001;
+                            route.m_numMesh = numTextObject.AddComponent<TextMesh>();
+                        }
 
-                    string routeStr = route.m_routePrefix + '/' + route.m_route;
-                    if (!m_usedRoutes.ContainsKey(routeStr))
-                    {
-                        m_usedRoutes[routeStr] = 0;
+                        string routeStr = route.m_routePrefix + '/' + route.m_route;
+                        if (!m_usedRoutes.ContainsKey(routeStr))
+                        {
+                            m_usedRoutes[routeStr] = 0;
+                        }
+                        m_usedRoutes[routeStr] += 1;
                     }
-                    m_usedRoutes[routeStr] += 1;
                 }
+            }
+            finally
+            {
+                Monitor.Exit(this.m_routeDict);
+            }
+
+        }
+
+        public void LoadSigns(List<SignContainer> signContainers)
+        {
+            while (!Monitor.TryEnter(this.m_signList, SimulationManager.SYNCHRONIZE_TIMEOUT)) ;
+            try
+            {
+                if (signContainers != null)
+                {
+                    foreach (SignContainer sign in signContainers)
+                    {
+                        if (sign.useTextureOverride)
+                        {
+                            SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_exitNum, sign.textureOverrides);
+
+                        }
+                        else
+                        {
+                            SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_destination, sign.m_exitNum, new Color( sign.r,sign.g,sign.b,sign.a));
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                Monitor.Exit(this.m_signList);
+            }
+
+        }
+
+        public void LoadDynamicSigns(List<DynamicSignContainer> dynamicSignContainers)
+        {
+            while (!Monitor.TryEnter(this.m_dynamicSignList, SimulationManager.SYNCHRONIZE_TIMEOUT)) ;
+            try
+            {
+                if (dynamicSignContainers != null)
+                {
+                    foreach (DynamicSignContainer sign in dynamicSignContainers)
+                    {
+                        SetDynamicSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_segment);
+                    }
+                }
+            }
+            finally
+            {
+                Monitor.Exit(this.m_dynamicSignList);
             }
         }
 
-        public void LoadSigns(SignContainer[] signContainers)
+        public void LoadOverrideSigns(List<OverrideSignContainer> overrideSignContainers)
         {
-            if (signContainers != null)
+            while (!Monitor.TryEnter(this.m_overrideSignDict, SimulationManager.SYNCHRONIZE_TIMEOUT)) ;
+            try
             {
-                foreach (SignContainer sign in signContainers)
+                if (overrideSignContainers != null)
                 {
-                    if (sign.useTextureOverride)
+                    foreach (OverrideSignContainer sign in overrideSignContainers)
                     {
-                        SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_exitNum,sign.textureOverrides);
-
-                    }
-                    else
-                    {
-                        SetSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_destination, sign.m_exitNum);
+                        SetOverrideSign(sign.m_segment, sign.m_exitNum, sign.textureOverrides, shouldLoadTexture: false);
                     }
                 }
             }
-        }
-
-        public void LoadDynamicSigns(DynamicSignContainer[] dynamicSignContainers)
-        {
-            if (dynamicSignContainers != null)
+            finally
             {
-                foreach (DynamicSignContainer sign in dynamicSignContainers)
-                {
-                    SetDynamicSign(new Vector3(sign.x, sign.y, sign.z), sign.angle, sign.m_routePrefix, sign.m_route, sign.m_segment);
-                }
+                Monitor.Exit(this.m_overrideSignDict);
             }
-        }
-
-        public void LoadOverrideSigns(OverrideSignContainer[] overrideSignContainers)
-        {
-            if (overrideSignContainers != null)
-            {
-                foreach (OverrideSignContainer sign in overrideSignContainers)
-                {
-                    SetOverrideSign(sign.m_segment, sign.m_exitNum, sign.textureOverrides, shouldLoadTexture : false);
-                }
-            }
+           
         }
     }
 
@@ -374,12 +431,20 @@ namespace MarkARoute.Managers
         [XmlElement(IsNullable = true)]
         public string extras = null;
 
+        public float r = 0;
+        public float g = 0;
+        public float b = 0;
+        public float a = 0;
+
         //Current terrain height, adjust as needed
         [NonSerialized]
         public float terrainY = 0;
 
         [NonSerialized]
         public Vector3 pos = new Vector3();
+
+        [NonSerialized]
+        public Color color;
 
         [NonSerialized]
         public MeshFilter m_sign;
@@ -401,7 +466,7 @@ namespace MarkARoute.Managers
         [NonSerialized]
         public TextMesh[] m_destinationMesh;
 
-        public SignContainer(Vector3 pos, float angle, string routePrefix, string route, string destination)
+        public SignContainer(Vector3 pos, float angle, string routePrefix, string route, string destination, Color color)
         {
             useTextureOverride = false;
             m_routePrefix = routePrefix;
@@ -412,6 +477,16 @@ namespace MarkARoute.Managers
             y = pos.y;
             z = pos.z;
             this.angle = angle;
+            if(color.a < 0.01f)
+            {
+                color = Color.white;
+            }
+            this.r = color.r;
+            this.g = color.g;
+            this.b = color.b;
+            this.a = color.a;
+
+            this.color = color;
         }
 
         public SignContainer(Vector3 pos, float angle, List<string> textureOverrideStrings)

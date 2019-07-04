@@ -131,13 +131,14 @@
     <Compile Include="Utils\FileUtils.cs" />
     <Compile Include="Utils\FontUtils.cs" />
     <Compile Include="Utils\LoggerUtils.cs" />
-    <Compile Include="Utils\MeshUtils.cs" />
+    <Compile Include="Utils\Graphics\MeshUtils.cs" />
     <Compile Include="Utils\ModSettings.cs" />
-    <Compile Include="Utils\PropUtils.cs" />
+    <Compile Include="Utils\Graphics\PropUtils.cs" />
     <Compile Include="Utils\RouteShieldConfig.cs" />
-    <Compile Include="Utils\ShaderUtils.cs" />
+    <Compile Include="Utils\Graphics\ShaderUtils.cs" />
     <Compile Include="Utils\SignPropConfig.cs" />
-    <Compile Include="Utils\SpriteUtils.cs" />
+    <Compile Include="Utils\Graphics\SpriteUtils.cs" />
+    <Compile Include="Utils\StringUtils.cs" />
     <Compile Include="Utils\TextureReplaceConfig.cs" />
   </ItemGroup>
   <ItemGroup />

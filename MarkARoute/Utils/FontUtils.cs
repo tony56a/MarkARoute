@@ -33,9 +33,9 @@ namespace MarkARoute.Utils
                 }
                 bundle.Unload(false);
 
-                if( SystemInfo.operatingSystem.Contains("Mac") || SystemInfo.operatingSystem.Contains("OS X")){
-                    m_fontStore[pair.Key] = DistrictManager.instance.m_properties.m_areaNameFont.baseFont;
-                }
+                /*if( SystemInfo.operatingSystem.Contains("Mac") || SystemInfo.operatingSystem.Contains("OS X")){
+                    m_fontStore[pair.Key] = Font.CreateDynamicFontFromOSFont(pair.Key, DistrictManager.instance.m_properties.m_areaNameFont.baseFont.fontSize);
+                }*/
             }
             
             return true;

@@ -1,15 +1,30 @@
 ﻿using MarkARoute.Managers;
 using MarkARoute.Tools;
 using MarkARoute.UI.Utils;
+using MarkARoute.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace MarkARoute.UI
 {
     class AddNewSignPanel : AddSignPanel
     {
+        public override List<String> supportedModes
+        {
+            get {
+                return new List<String> { OVERLAY, TEXTURE_REPLACE };
+            }
+        }
+
+        public override void populatePropTypes()
+        {
+            foreach (String signPropName in PropUtils.m_signPropDict.Keys.Where(key => SignPropConfig.signPropInfoDict.ContainsKey(key)))
+            {
+                m_propTypeDropDown.AddItem(signPropName);
+            }
+        }
+
 
         public override void SetRoadData()
         {
@@ -27,7 +42,12 @@ namespace MarkARoute.UI
                         mSignPlacementTool.routeStr = m_routeStrField.text;
                         mSignPlacementTool.routePrefix = m_routeTypeDropdown.selectedValue;
                     }
-                    mSignPlacementTool.destination = m_destinationField[0].text + '\n' + m_destinationField[1].text;
+
+                    String destString = m_destinationField[0].text + '\n' + m_destinationField[1].text;
+
+                    mSignPlacementTool.destination = destString;
+                    mSignPlacementTool.color = m_destinationField[0].textColor;
+                    mSignPlacementTool.color.a = 1f;
                     mSignPlacementTool.SetPropInfo(m_propTypeDropDown.selectedValue);
                     break;
                 case TEXTURE_REPLACE:

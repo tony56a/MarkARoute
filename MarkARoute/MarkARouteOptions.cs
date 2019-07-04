@@ -2,10 +2,7 @@
 using ICities;
 using MarkARoute.Managers;
 using MarkARoute.Utils;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace MarkARoute
@@ -13,7 +10,6 @@ namespace MarkARoute
     public class MarkARouteOptions : MonoBehaviour
     {
         public static bool mInGame = false;
-        private static UICheckBox shouldLoadDefaultSign = null;
         private static UIHelperBase shieldBase = null;
         private static UIHelperBase reloadBase = null;
 
@@ -31,7 +27,6 @@ namespace MarkARoute
 
         public void generateSettings(UIHelperBase helper)
         {
-            shouldLoadDefaultSign = helper.AddCheckbox("Should show game default highway signs", ModSettings.Instance().loadMotorwaySigns, onShouldDefaultSignChecked) as UICheckBox;
             shieldBase = helper.AddGroup("Route Shield Options");
             shieldSelector = shieldBase.AddDropdown("Route Shield", null, 0, onShieldSelected) as UIDropDown;
             mUpOffsetSlider = shieldBase.AddSlider("Text Up offset", -1, 1, 0.1f, 0, onUpOffsetChanged) as UISlider;
@@ -58,7 +53,6 @@ namespace MarkARoute
         {
             if (loaded())
             {
-                MarkARouteOptions.shouldLoadDefaultSign.isChecked = ModSettings.Instance().loadMotorwaySigns;
                 shieldKey = RouteShieldConfig.Instance().routeShieldDictionary.Keys.ToList()[0];
                 shieldInfo = RouteShieldConfig.Instance().routeShieldDictionary[shieldKey];
                 int color = shieldInfo.textColor == Color.black ? 0 : 1;
@@ -68,12 +62,6 @@ namespace MarkARoute
                 MarkARouteOptions.mTextSizeSlider.value = shieldInfo.textScale;
                 MarkARouteOptions.mTextColor.selectedIndex = color;
             }
-        }
-
-        private void onShouldDefaultSignChecked(bool isChecked)
-        {
-            ModSettings.Instance().loadMotorwaySigns = isChecked;
-            RenderingManager.instance.replaceProp(isChecked);
         }
 
         private void onSaveBtnClicked()

@@ -17,7 +17,7 @@ namespace MarkARoute.Patches
     [HarmonyPatch("RenderOverlay")]
     public class BulldozerToolOverlayPatch
     {
-        static Color toolColor = Color.red;
+        static Color toolColor = new Color32(0, 181, 255, 255);
 
         public static bool Prefix(BulldozeTool __instance, ref RenderManager.CameraInfo cameraInfo)
         {
@@ -98,7 +98,6 @@ namespace MarkARoute.Patches
             returnValue = null;
             return false;
         }
-
 
 
         public static void Postfix()

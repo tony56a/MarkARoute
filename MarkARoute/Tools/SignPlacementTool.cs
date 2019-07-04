@@ -14,7 +14,6 @@ namespace MarkARoute.Tools
     abstract class SignPlacementTool : DefaultTool
     {
         public float m_angle;
-        public Texture2D m_brush;
         public CursorInfo m_buildCursor;
         protected PropInfo m_propInfo;
         private bool m_mouseLeftDown;

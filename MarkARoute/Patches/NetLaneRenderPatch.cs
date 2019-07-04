@@ -6,6 +6,7 @@ using Harmony;
 using MarkARoute.Managers;
 using UnityEngine;
 using MarkARoute.Utils;
+using ColossalFramework.Math;
 
 namespace MarkARoute.Patches
 {
@@ -37,16 +38,13 @@ namespace MarkARoute.Patches
 
         public static bool Prefix( ref RenderManager.CameraInfo cameraInfo,ref PropInfo info, ref InstanceID id,ref Vector3 position,ref float scale, ref float angle, ref Color color, ref Vector4 objectIndex, bool active)
         {
-            if (!info.m_prefabInitialized)
-            {
-                return true;
-            }
-            if (info != null && info.name != null && info.name.ToLower().Contains("motorway overroad signs") && id.NetSegment != 0 && RouteManager.instance.m_overrideSignDict.ContainsKey(id.NetSegment) )
+
+            if (info != null && info.name != null && info.name.ToLower().Contains("motorway overroad") && RouteManager.instance.m_overrideSignDict.ContainsKey(id.NetSegment) )
             {
                 OverrideSignContainer container = RouteManager.instance.m_overrideSignDict[id.NetSegment];
-                
+
                 // If sign is not to be rendered, then bail out, but skip original method
-                if(container.m_exitNum == RouteManager.NONE)
+                if (container.m_exitNum == RouteManager.NONE)
                 {
                     return false;
                 }
@@ -68,6 +66,32 @@ namespace MarkARoute.Patches
                 Vector3 direction = (netSegment.m_flags & NetSegment.Flags.Invert) != NetSegment.Flags.None ? netSegment.m_endDirection : netSegment.m_startDirection;
                 posOffset.x *= direction.z;
                 posOffset.z *= direction.x;
+
+                if (!info.m_hasRenderer || (cameraInfo.m_layerMask & 1 << info.m_prefabDataLayer) == 0)
+                    return false;
+                if (InfoManager.instance.CurrentMode == InfoManager.InfoMode.None)
+                {
+                    if (!active && !info.m_alwaysActive)
+                        objectIndex.z = 0.0f;
+                    else if ((double)info.m_illuminationOffRange.x < 1000.0 || info.m_illuminationBlinkType != LightEffect.BlinkType.None)
+                    {
+                        LightSystem lightSystem = RenderManager.instance.lightSystem;
+                        Randomizer randomizer = new Randomizer(id.Index);
+                        float num1 = info.m_illuminationOffRange.x + (float)((double)randomizer.Int32(100000U) * 9.99999974737875E-06 * ((double)info.m_illuminationOffRange.y - (double)info.m_illuminationOffRange.x));
+                        objectIndex.z = MathUtils.SmoothStep(num1 + 0.01f, num1 - 0.01f, lightSystem.DayLightIntensity);
+                        if (info.m_illuminationBlinkType != LightEffect.BlinkType.None)
+                        {
+                            Vector4 blinkVector = LightEffect.GetBlinkVector(info.m_illuminationBlinkType);
+                            float f = (float)((double)num1 * 3.71000003814697 + (double)SimulationManager.instance.m_simulationTimer / (double)blinkVector.w);
+                            float x = (f - Mathf.Floor(f)) * blinkVector.w;
+                            float num2 = MathUtils.SmoothStep(blinkVector.x, blinkVector.y, x);
+                            float num3 = MathUtils.SmoothStep(blinkVector.w, blinkVector.z, x);
+                            objectIndex.z *= (float)(1.0 - (double)num2 * (double)num3);
+                        }
+                    }
+                    else
+                        objectIndex.z = 1f;
+                }
 
                 if (cameraInfo == null || cameraInfo.CheckRenderDistance(position, propInfo.m_lodRenderDistance))
                 {

@@ -58,7 +58,11 @@ namespace MarkARoute.Utils
 
         public static Material ReplaceTexture(string signPropType, List<string>textureOverrides )
         {
-
+            if( !m_signPropDict.ContainsKey(signPropType))
+            {
+                // This should be for "none" cases
+                return null;
+            }
             Material material = m_signPropDict[signPropType].m_material;
 
             Texture2D texture = material.mainTexture as Texture2D;
@@ -82,9 +86,49 @@ namespace MarkARoute.Utils
                     }
                 }
             }
+
+
             texCopy.Apply();
             material.mainTexture = texCopy;
             return material;
         }
+
+        public static bool GetNearLines(ushort segmentId, float maxDistance,float searchSize, ref HashSet<string> linesFound)
+        {
+            NetManager nm = NetManager.instance;
+            Vector3 pos = nm.m_segments.m_buffer[segmentId].m_middlePosition;
+            float extendedMaxDistance = maxDistance * 1.3f;
+            int num = Mathf.Max((int)((pos.x - extendedMaxDistance) / 64f + 135f), 0);
+            int num2 = Mathf.Max((int)((pos.z - extendedMaxDistance) / 64f + 135f), 0);
+            int num3 = Mathf.Min((int)((pos.x + extendedMaxDistance) / 64f + 135f), 269);
+            int num4 = Mathf.Min((int)((pos.z + extendedMaxDistance) / 64f + 135f), 269);
+            bool noneFound = true;
+            for (int i = num2; i <= num4; i++)
+            {
+                for (int j = num; j <= num3; j++)
+                {
+                    ushort num6 = nm.m_segmentGrid[i * 270 + j];
+                    int num7 = 0;
+                    while (num6 != 0)
+                    {
+                        NetSegment segment = nm.m_segments.m_buffer[num6];
+                        float num8 = Vector3.SqrMagnitude(pos - nm.m_nodes.m_buffer[(int)num6].m_position);
+                        if (num8 < maxDistance * maxDistance && (linesFound.Count < searchSize))
+                        {
+                            linesFound.Add(NetManager.instance.GetSegmentName(num6));
+                        }
+
+                            num6 = nm.m_nodes.m_buffer[num6].m_nextGridNode;
+                        if (++num7 >= 32768)
+                        {
+                            LoggerUtils.Log("Out Of Bounds for list search");
+                            break;
+                        }
+                    }
+                }
+            }
+            return noneFound;
+        }
+
     }
 }
